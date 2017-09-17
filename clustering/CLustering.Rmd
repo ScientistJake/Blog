@@ -1,0 +1,301 @@
+---
+title: "Clustering"
+output: html_document
+---
+
+This is the first post in a mult-ipart series on clustering RNA-seq data in which we will discuss  different clustering methods and how they compare. Today's topic is hierarchical clustering and will include:
+
+1. Using hierarchical clustering to cluster genes and samples.
+2. Making heatmaps.
+3. Cutting dendrograms to identify gene clusters.
+4. Associating clusters with external traits.
+
+So let's say we've performed an RNA-seq experiment. The sequencing went swimmingly and the normalization/ quantification with edgeR or DEseq is finished. Now what do we do with all of this data? I say cluster. And cluster we shall.
+
+Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a  cluster we can get an idea of what that cluster is doing.
+
+This is all a little abstract so let's learn by doing. First we need to pull down some data to play with. The following will get us some mouse time-series data and take just the first 1000 genes as an example:
+
+```{r data}
+mydat <- read.table(url("http://bowtie-bio.sourceforge.net/recount/countTables/trapnell_count_table.txt"), sep="\t", header =T, row.names = 1)
+#drop genes with low counts and take the first 1000.
+mydat <- mydat[rowSums(mydat > 1) >=4,]
+mydat <- mydat[1:1000,]
+y <- as.matrix((mydat)) 
+```
+
+Since this is RNAseq data, we should perform a quick normalization. We can do this using [edgeR.](https://bioconductor.org/packages/release/bioc/html/edgeR.html) If you don't have edgeR installed you can continue with the y object and skip the next few lines.
+
+```{r edgeR, eval=FALSE}
+library(edgeR)
+y <- DGEList(counts = y, group=c(1,2,3,4))
+y <- calcNormFactors(y)
+z <- cpm(y, normalized.lib.size=TRUE) 
+```
+
+```{r override, echo=FALSE}
+z <- y
+```
+
+Next, we scale the data and construct the trees (dendrograms). Since we are comparing gene expression patterns we need to scale the data otherwise all of the highly expressed genes will cluster together even if they have different patterns among the samples. After that we calculate the 'distance' between genes and samples as 1 minus the correlation of one gene/sample to another. You can think of this distance as how differently one gene behaves compared to another. This distance is used by hclust() to construct the dendrograms for the genes and samples
+
+```{r trees, echo=FALSE}
+scaledata <- t(scale(t(z))) # Centers and scales data.
+# Cluster rows by Pearson correlation.
+hr <- hclust(as.dist(1-cor(t(scaledata), method="pearson")), method="complete")
+# Clusters columns by Spearman correlation. 
+hc <- hclust(as.dist(1-cor(scaledata, method="spearman")), method="complete")
+```
+
+Now we're ready to generate a heatmap of the data. I like heatmap.2 in the gplots package, but you can pass the same call below to the base function heatmap() if you like:
+
+```{r heatmap, message=FALSE}
+library(gplots)
+heatmap.2(z,
+          Rowv=as.dendrogram(hr), 
+          Colv=as.dendrogram(hc),
+          col=redgreen(100),
+          scale="row",
+          margins = c(7, 7),
+          cexCol = 0.7,
+          labRow = F,
+          main = "Heatmap.2",
+          trace = "none")
+```
+
+Starting to look pretty sharp! Our eyes already start to pull out the groups of genes that cluster together. For example we can easily see a large groups of genes down-regulated in sample 94 and upregulated in 97 as well as another group that up in 94 and down in 95, 96, and 97.  Speaking of samples, this plot also allows us to see how our samples group together. This is important to see if say all of an experiments replicates cluster together.
+
+I often cluster just my samples to check for outliers like so:
+
+```{r sample}
+TreeC = as.dendrogram(hc, method="average")
+plot(TreeC,
+     main = "Sample Clustering",
+     ylab = "Height")
+```
+
+Similarly we can extract just the gene clustering:
+
+```{r gene}
+TreeR = as.dendrogram(hr, method="average")
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+```
+
+We can see how hierarchical clustering groups the genes by co-expression. We can use that information to see the similarity of two genes as they change across samples. We can also extract discrete clusters of genes as a means to identify co-expression modules. This is done by cutting the tree at a specified height and the resulting branches will make a cluster. We can cut the tree high to obtain a small number of large clusters or lower to obtain many small clusters. Let's try a few different cut heights: 1.5, 1.0 and 5.0:
+
+```{r cuts}
+hclusth1.5 = cutree(hr, h=1.5) #cut tree at height of 1.5
+hclusth1.0 = cutree(hr, h=1.0) #cut tree at height of 1.0
+hclusth0.5 = cutree(hr, h=0.5) #cut tree at height of 0.5
+```
+
+cutree() outputs a vector of cluster assignments. These will come in handy for downstream analyses.
+
+```{r clust1.5}
+head(hclusth1.5)
+```
+
+Now, using the dendextend package we can visualize the cluster assignments as a color bar below the dendrogram. There's also a lot of other cool ways to use this package like coloring the leaves.  It's worthwhile to check out their [documentation](https://cran.r-project.org/web/packages/dendextend/vignettes/introduction.html).
+
+```{r dendextend, message=FALSE}
+library(dendextend)
+#plot the tree
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+
+#add the three cluster vectors
+the_bars <- cbind(hclusth0.5, hclusth1.0, hclusth1.5)
+#this makes the bar
+colored_bars(the_bars, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c("h=0.5","h=1.0","h=1.5"),cex.rowLabels=0.7)
+#this will add lines showing the cut heights
+abline(h=1.5, lty = 2, col="grey")
+abline(h=1.0, lty = 2, col="grey")
+abline(h=0.5, lty = 2, col="grey")
+```
+
+Pretty neat! We see how cutting the tree at different heights yields different clusters. Alternatively, we can designate the number of clusters we want by using the 'k' option in cutree().
+
+Here I'm asking for four (k=4):
+
+```{r k4}
+hclustk4 = cutree(hr, k=4)
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+colored_bars(hclustk4, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c("k=4"),cex.rowLabels=0.7)
+```
+
+There's another method of tree cutting worth mentioning: Dynamic tree cutting (1). Above, we cut the tree using a fixed height. This is a simple and intuitive method but is not optimal for large datasets with complicated dendrograms. Additionally when using fixed height cutting we lose sub clusters since they may fall below the cut threshold. To address these issues, Peter Langfelder, Bin Zhang and Steve Horvath developed dynamic tree cutting. Dynamic tree cutting takes into account the shape of the branches when cutting the tree, so rather than cutting the entire dendrogram at a fixed height each branch is adaptively trimmed. There are two main implementations, a top down approach using only the dendrogram (tree) and a bottom up approach (hybrid) which detects outlying members of a cluster. You can read much more [here](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/BranchCutting/). In this case we will use the 'hybrid' method:
+
+```{r dynamic}
+library(dynamicTreeCut)
+clusDyn <- cutreeDynamic(hr, distM = as.matrix(as.dist(1-cor(t(scaledata)))), method = "hybrid")
+
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+
+colored_bars(clusDyn, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c("Dynamic"),cex.rowLabels=0.7)
+```
+
+Whatever the method, once we have clusters we are happy with is where the real analysis begins! At this point we could:
+
+1. Test for gene-ontology enrichment by cluster.
+2. Plot cluster expression as function of the samples.
+3. Correlate clusters to external traits.
+
+Here we will do the latter two. First we need some trait data:
+
+```{r traits}
+traits <- read.table(url("http://bowtie-bio.sourceforge.net/recount/phenotypeTables/trapnell_phenodata.txt"), sep="", header =T, row.names = 1)
+ 
+#since the cell line and strain are the same we remove them
+traits<- traits[-c(2:3)]
+```
+
+To calculate the cores (aka medoids) of each cluster we can use this function by Biostar user [Michael Dundrop](https://www.biostars.org/u/55/). Here I'm using a cutheight of 1.5 to have a smaller number of large clusters.
+
+```{r cores}
+clust.core = function(i, dat, clusters) {
+  ind = (clusters == i)
+  colMeans(dat[ind,])
+}
+
+clusters <- hclusth1.5
+cores <- sapply(unique(clusters), clust.core, scaledata, clusters)
+```
+
+Now we can plot the cores as a function of the samples. Since this is time series data, we use the time.point.hrs trait to plot the samples.
+
+```{r coreplot}
+library(ggplot2)
+library(reshape2)
+#make a dataframe of cores by time
+d <- data.frame(cbind(traits$time.point.hrs,cores))
+colnames(d) <-c("time", paste0("clust_",1:ncol(cores)))
+
+#get the data frame into long format for plotting
+dmolten <- melt(d, id.vars = "time")
+#order by time
+dmolten <- dmolten[order(dmolten$time),]
+
+# make the plot
+p1 <- ggplot(dmolten, aes(time,value, col=variable)) + 
+  geom_point() + 
+  geom_line() +
+  scale_x_continuous(minor_breaks = NULL, breaks=c(as.numeric(levels(factor(dmolten$time))))) +
+  xlab("Time") +
+  ylab("Expression") +
+  labs(title= "Cluster Core Expression by Time",color = "Cluster")
+p1
+```
+
+We can see that each cluster shows a fairly distinct shape with respect to time. Too many modules and we might see some clusters with redundant profiles meaning they are similar (perhaps the tree was cut too low).
+
+Now let's extract just module 1 and plot all of those entries with the core overlaying to visualize the module as a whole.
+
+```{r cluster1}
+#subset the complete data by cluster =1
+dClust1 <- t(scaledata[hclusth1.5==1,])
+#add the time
+dClust1 <- data.frame(cbind(traits$time.point.hrs,dClust1))
+colnames(dClust1)[1] <- "time"
+
+#get the data frame into long format for plotting
+dClust1molten <- melt(dClust1, id.vars = "time")
+#order by time
+dClust1molten <- dClust1molten[order(dClust1molten$time),]
+
+#Subset the cores molten dataframe so we can plot core1
+core1 <- dmolten[dmolten$variable=="clust_1",]
+
+# Call ggplot, now we use the group=variable and change the geom_line to grey
+# Then we add on top of that the core in blue.
+# to do that we pass the core data to geom_line
+
+p2 <- ggplot(dClust1molten, aes(time,value, group=variable)) + 
+  geom_line(color="grey") +
+  geom_point(data=core1, aes(time,value), color="blue") + 
+  geom_line(data=core1, aes(time,value), color="blue") +
+  scale_x_continuous(minor_breaks = NULL, breaks=c(as.numeric(levels(factor(dmolten$time))))) +
+  xlab("Time") +
+  ylab("Expression") +
+  labs(title= "Cluster 1 Expression by Time",color = "Cluster")
+p2
+```
+
+It appears that all of the genes contained in cluster 1 decrease in expression over time (but we already knew that from plotting the cores). What this plot does tell us is how 'tight' this cluster is. We can see that for the most part, the genes assigned to cluster 1 follow the core. There are a few genes however who's expression increases between 60 and 120 hours. Since I cut the tree rather high, I potentially regrouped genes that don't 'fit' very well within the clusters. As a remedy to this problem I would consider cutting the tree lower or using dynamic tree cutting.
+
+To wrap up this tutorial, we will correlate the clusters with external traits. The traits can be anything we have data on: eg. disease, treatment, time, cell-line etc.  In our case our only usable traits are time and replicate number so we will just use those. Also rather than using just 'overall time' as a trait I will split these observations up to see how each cluster associates with each timepoint. This workflow is adapted from the [WGCNA tutorial](https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/Tutorials/) (2).
+
+```{r traittest}
+#here I'm adding vectors of time traits to the dataframe
+traits$'time:-24' <- c(0,0,0,1)
+traits$'time:60' <- c(0,0,1,0)
+traits$'time:120' <- c(1,0,0,0)
+traits$'time:168' <- c(0,1,0,0)
+
+#correlate the cores to traits:
+moduleTraitCor = cor(cores, traits, use= "p")
+#Extract the gene/sample numbers
+nGenes = nrow(mydat)
+nSamples = ncol(mydat)
+
+#p value calculation from WGCNA
+corPvalueStudent = function(cor, nSamples) {
+  T=sqrt(nSamples-2) * cor/sqrt(1-cor^2)
+  2*pt(abs(T),nSamples-2, lower.tail = FALSE)
+}
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
+
+#generate a text matrix of the correlation and pvalue
+textMatrix= paste(signif(moduleTraitCor, 2), "\n(",
+                  signif(moduleTraitPvalue, 1), ")", sep= "")
+dim(textMatrix)= dim(moduleTraitCor)
+```
+
+It would also be wise to output the textmatrix to a file so we have the correlation and pvalues to refer to later.
+
+With all of this we can generate a heatmap to visualize the correlations.
+
+```{r labeled_heatmap}
+#plot a heatmap of the clusters by trait overlaying the corr/pvalue
+par(oma=c(1,0,1,1))
+heatmap.2(moduleTraitCor,
+          dendrogram = "none",
+          Colv =FALSE,
+          scale = c("none"),
+          col="heat.colors",
+          na.rm=TRUE,
+          cellnote = textMatrix,
+          notecol="grey30",
+          notecex=0.6,
+          trace=c("none"),
+          cexRow = 0.8,
+          cexCol = 0.8,
+          main = "Cluster-Trait Correlation",
+          xlab = "Traits",
+          ylab = "Clusters")
+```
+
+Similar to the line plot above, we can see how the different modules correlate to time points. Looking at cluster 1 again we can see it is negatively correlated to time overall. We can also identify clusters that significantly correlate to a specific timepoint. Cluster 2 for example has a very high correlation to t=-24 with a low p-value associated meaning this correlation is significant. Conversely cluster 7 is strongly associated with t=168 and could represent genes that are activated late in this time series.
+
+The best way to apply this method to your data is to try several different methods of tree cutting and see how they compare. If you notice that cutting the tree high gives modules that are heterogenous in expression pattern that you might consider cutting lower. On the contrary if you notice that cutting lower gives expression profiles that are too redundant you might want to regroup those clusters by cutting higher. Finally you can compare tree cutting with other methods of clustering like centroid based clustering (k-means) and see how they hold up. More on that in that later when i continue this series on clustering!
+
+Hope you found this little tutorial helpful! Happy data mining!
+
+Refs:
+1. Langfelder P, Zhang B, Horvath S (2007) Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R. Bioinformatics 2008 24(5):719-720
+
+2. Langfelder P, Horvath S (2008) WGCNA: an R package for weighted correlation network analysis. BMC Bioinformatics 2008, 9:559 PMID: 19114008 PMCID: PMC2631488
+
+```{r session}
+sessionInfo()
+```
