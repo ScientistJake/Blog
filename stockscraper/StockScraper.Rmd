@@ -55,7 +55,7 @@ names(GOOG) <- c("Date","Open","High","Low","Close","Adj.Close","Volume")
 library(ggplot2)
 ggplot(GOOG, aes(x = Date, y = Close)) +
 geom_line() +
-labs(title = "GOOG Line Chart", y = "Closing Price", x = "")
+labs(title = "GOOG Price", y = "Closing Price", x = "")
 ```
 
 Good luck and happy data-mining!

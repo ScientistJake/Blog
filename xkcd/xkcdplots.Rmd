@@ -1,0 +1,94 @@
+---
+title: 'xkcd plots:'
+output: html_document
+---
+
+One of my favorite things about R is the massive number of community built packages. Besides the datascience essentials like [tidyverse](https://www.tidyverse.org/), there's some quirky fun ones like [emoGG](https://github.com/dill/emoGG) for when you want :hankey: instead of the normal pch icons. So it was to my nerdy elation that I found the ggplot add on [xkcd](http://xkcd.r-forge.r-project.org/) to draw ggplots in the style of the [legendary webcomic](https://xkcd.com/). Let's give it a try:
+
+```{r}
+#the following block is used to install the fonts:
+
+#install.packages('xkcd')
+# download.file("http://simonsoftware.se/other/xkcd.ttf", dest="xkcd.ttf", mode="wb")
+# system("mkdir ~/Library/Fonts/")
+# system("cp xkcd.ttf  ~/Library/Fonts/")
+# font_import(pattern = "[X/x]kcd", prompt=FALSE)
+# fonts()
+# fonttable()
+# if(.Platform$OS.type != "unix") {
+#   ## Register fonts for Windows bitmap output
+#   loadfonts(device="win")
+# } else {
+#   loadfonts()
+# }
+
+```
+
+The trickiest part is getting the xkcd font downloaded and put in the right directory. Once you have that figured out the plot is very straightforward:
+
+```{r warning=F,message=FALSE}
+#dataframe:
+df <- data.frame(c(2,3,4,16,32,64,128,356,0,0,0,0,0),c(10,9,8,7,6,5,4,1.25,1.21,1.20,1.19,1.1,1))
+colnames(df) <- c('proj','days')
+
+library(xkcd)
+library(ggplot2)
+library(extrafont)
+
+# here's just the plot:
+xrange <- range(df$days)
+yrange <- range(df$proj)
+set.seed(123) # for reproducibility
+p <- ggplot() + geom_smooth(aes(days, proj), data=df, method = 'loess',se=F) + xkcdaxis(xrange,yrange) +
+  xlab('Days til deadline') +
+  ylab('Time spent on this silly plots') +
+  geom_vline(xintercept = 2,colour = "red") +
+  annotate("text", 3.0, 250, label = "Crisis Point",colour = "red",family='xkcd') +
+  scale_x_reverse()
+p
+```
+
+You can also include stickfigures! They are a bit tought to draw though. I recommend experimenting with the angles until you get it right. The [vignettes](https://cran.r-project.org/web/packages/xkcd/vignettes/xkcd-intro.pdf) do a  good job of explaining how the different parameters map. 
+
+```{r warning=F,message=FALSE}
+#this block makes the stick figure:
+#play around with the angles to see how they change the drawing:
+mapping <- aes(x, y, scale, ratioxy, angleofspine,
+               anglerighthumerus, anglelefthumerus,
+               anglerightradius, angleleftradius,
+               anglerightleg, angleleftleg, angleofneck)
+ratioxy <- diff(xrange) / diff(yrange)
+dataman <- data.frame( x= c(8), y=c(250),
+                       scale = 75 ,
+                       ratioxy = ratioxy,
+                       angleofspine =  -pi/2  ,
+                       anglerighthumerus = c(-pi/6),
+                       anglelefthumerus = c(-pi/2 - pi/6),
+                       anglerightradius = c(pi*1.25),
+                       angleleftradius = c(pi*1.25),
+                       angleleftleg = 3*pi/2  + pi / 12 ,
+                       anglerightleg = 3*pi/2  - pi / 12,
+                       angleofneck = runif(1, 3*pi/2-pi/10, 3*pi/2+pi/10))
+datalines <- data.frame(xbegin=c(7),ybegin=c(250),
+                        xend=c(6.5), yend=c(300))
+
+# plot out the first plot with the stick figure:
+p <- ggplot() + geom_smooth(aes(days, proj), data=df, method = 'loess',se=F) + xkcdaxis(xrange,yrange) +
+  xlab('Days til deadline') +
+  ylab('Time spent on silly plots') +
+  geom_vline(xintercept = 2,colour = "red") +
+  annotate("text", 3.0, 250, label = "Crisis Point",colour = "red",family='xkcd') +
+  scale_x_reverse() +
+  xkcdman(mapping, dataman) +
+  annotate("text", x=6, y = 320,
+           label = "I think I have a problem...", family="xkcd" ) +
+  xkcdline(aes(xbegin=xbegin,ybegin=ybegin,xend=xend,yend=yend),datalines, xjitteramount = 0.12)
+p
+```
+
+Fun. Can't wait to see one in someone's dissertation seminar!
+
+###session
+```{r}
+sessionInfo()
+```
