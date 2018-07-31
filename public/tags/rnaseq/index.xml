@@ -6,19 +6,19 @@
     <description>Recent content in Rnaseq on 2-BitBio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 23 Jul 2015 21:13:14 -0500</lastBuildDate>
+    <lastBuildDate>Tue, 31 Jul 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/rnaseq/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Next Post</title>
-      <link>/post/2015-07-23-r-rmarkdown/</link>
-      <pubDate>Thu, 23 Jul 2015 21:13:14 -0500</pubDate>
+      <title>Clustering RNAseq data using fuzzy c-means clustering</title>
+      <link>/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/</link>
+      <pubDate>Tue, 31 Jul 2018 00:00:00 +0000</pubDate>
       
-      <guid>/post/2015-07-23-r-rmarkdown/</guid>
-      <description>Hello world. Just migrated from blogger to hugo and seeing how it goes.
-sessionInfo() ## R version 3.5.0 (2018-04-23) ## Platform: x86_64-apple-darwin15.6.0 (64-bit) ## Running under: macOS Sierra 10.12.6 ## ## Matrix products: default ## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib ## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib ## ## locale: ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8 ## ## attached base packages: ## [1] stats graphics grDevices utils datasets methods base ## ## loaded via a namespace (and not attached): ## [1] compiler_3.</description>
+      <guid>/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/</guid>
+      <description>Note this is part 2 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here and part two on K-means clustering here.
+Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in part one and part two of this series.</description>
     </item>
     
   </channel>
