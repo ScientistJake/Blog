@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-03-29T21:13:14JST">2017-03-29</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/03/rna-seq-do-i-need-replicates.html">RNA-seq: How many replicates?</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  <span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Do I need replicates for RNA-seq? </span><br />
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Short answer: yes.</span><br />
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Longer answer: Depends on &nbsp;the goal of your analysis. For simplicity, let's break RNA-seq into two types of studies: Qualitative and Quantitative. An example of a qualitative analysis is a transcriptome assembly. For this kind of study sequencing depth is your friend, and paired-end sequencing a must. Replicates in this case would be helpful but optional. By contrast in a quantitative analysis, like a differential expression experiment, replicates are essential. These days many experimenters, with good reason, try and do both at the same time so the long answer is still 'yes'.</span></div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">The number of replicates you decide to sequence is quite literally a cost-benefit analysis since the major limiter these days seems to be the price of sequencing. Two important things to consider are:</span></div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">&nbsp;&nbsp;&nbsp; </span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">1: How noisy is your data.</span></div>
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">&nbsp;&nbsp;&nbsp; </span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">2: What you’re looking for.</span></div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Let’s look (hear?) at noise. Below are two example sets both from the starlet sea anemone <i>Nematostella vectensis</i>. The top two plots are RNAseq data from embryonic samples and the bottom two from regeneration. In the Embryonic case, we see that the Biological coefficient of variation (which is the square root of the dispersion) is fairly low with the common BCV being ~0.18. In the principle component plot on the right, each replicate of the three samples cluster tightly together. We can conclude that our inter-replicate variation is low for these data. In the case of Regeneration (lower plots) the common BCV is higher ~0.21 and the replicates don't exhibit the same tightness in their clustering. This is because regeneration is not as synchronized or stereotypical as embryogenesis and this makes the data a bit more noisy. For this reason we opted for triplicates in our sampling which will increase our ability to detect differentially expressed genes later on. </span></div>
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-S36aALjfqk0/WNt8i_QqYGI/AAAAAAAAHdA/KlXKvGGULGwA1hdC8GY3b0WR5gnhPAyeACLcB/s1600/Sans%2Btitre%2B-%2B1.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="299" src="https://4.bp.blogspot.com/-S36aALjfqk0/WNt8i_QqYGI/AAAAAAAAHdA/KlXKvGGULGwA1hdC8GY3b0WR5gnhPAyeACLcB/s640/Sans%2Btitre%2B-%2B1.png" width="640" /></a></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-XWui8rAd26s/WNt8kyZwlBI/AAAAAAAAHdE/MyEAqemTGL4UkyT1ONoQMDRVl_r_24-ugCLcB/s1600/Sans%2Btitre%2B-%2B2.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="288" src="https://2.bp.blogspot.com/-XWui8rAd26s/WNt8kyZwlBI/AAAAAAAAHdE/MyEAqemTGL4UkyT1ONoQMDRVl_r_24-ugCLcB/s640/Sans%2Btitre%2B-%2B2.png" width="640" /></a></div>
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"></span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"></span></div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">The second thing to consider when deciding the number of replicates is the goals of the study. More replicates will yield more gene discovery in a simple differential expression experiment, although with diminishing returns (Liu et al. 2014; Schruch et al. 2016). Consider this figure from Liu et al</span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">. &nbsp;As you can see the number of </span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">discovered </span>DE genes increases with replicates while sequencing depth gives diminishing returns after 10M reads.</span></div>
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><span id="goog_398686325"></span><span id="goog_398686326"></span><br /></span>
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-CmfBLGaiQH0/WNp5kcNXL4I/AAAAAAAAHcE/cV0MwtDopgU-19CMLoMbJpv5TM0pZ2zVgCLcB/s1600/Screen%2BShot%2B2017-03-28%2Bat%2B16.55.29.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="https://4.bp.blogspot.com/-CmfBLGaiQH0/WNp5kcNXL4I/AAAAAAAAHcE/cV0MwtDopgU-19CMLoMbJpv5TM0pZ2zVgCLcB/s1600/Screen%2BShot%2B2017-03-28%2Bat%2B16.55.29.png" /></a></div>
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><span id="goog_398686325"></span><span id="goog_398686326"></span><br /></span></div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">So if your goal is to find&nbsp; subtle changes in gene expression in inherently noisy data, the more replicates the better. If however you just want a list of the most highly DE genes from samples that are fairly stereotypical, two full biological replicates may suffice. </span></div>
+<br />
+<div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">One last quick note about transcriptome assembly. One does not need replicates per se, and a greater depth of sequencing will give you more detectable transcripts. However you will most likely want to quantify the results later on so might as well include those samples (and their replicates) in your experimental design.</span><br />
+<br />
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Oh yeah and here's the code for the BCV plot and the PCA:</span><br />
+<br />
+<span><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">library(edgeR)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">library(ggplot2)</span></span></span></span><br />
+<br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">#EdgeR and BCV plot&nbsp;</span> </span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">m &lt;- data.matrix(rawcounts)#raw counts is a count matrix with columns as samples and rows as genes<br />m &lt;- m[rowSums(m &gt; 5) &gt;=2,] #drop low counts. for large datasets I set &gt;=(0.5*sample number)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">counts &lt;-&nbsp; m</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">group &lt;- c(1,1,2,2,3,3) #designate replicates</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">BCV.true &lt;- 0.1</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">y &lt;- DGEList(counts=counts, group=group)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">y &lt;- estimateCommonDisp(y)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">y &lt;- estimateTrendedDisp(y)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">y &lt;- estimateTagwiseDisp(y)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">plotBCV(y, main="Embryo", xlim=c(-5,15), ylim=c(0.0,0.8))&nbsp;</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">#I set the limits so the two plots look the same</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><br /><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">#PCA</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">z &lt;- cpm(y, normalized.lib.size=TRUE)</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">log_data = log(z+1,2) #log transforming is optional</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">condition &lt;- factor(c(1,1,2,2,3,3))<br />replicate &lt;- factor(c(1,2,1,2,1,2))<br />transpose &lt;- t(log_data) #this puts samples as rows, genes as columns <br />transpose_df &lt;- as.data.frame(transpose)<br />pca.data &lt;- prcomp(transpose_df)<br />summary(pca.data)<br />scores = as.data.frame(pca.data$x) #get scores for plotting<br />p &lt;- ggplot(data = scores, aes(x = PC1, y = PC2, label = rownames(scores), colour=factor(group), shape=factor(grouprep))) +&nbsp;</span></span></span><br />
+<span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;"><span style="background-color: transparent; color: black; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">geom_point(size=6) + scale_fill_hue(l=40) +&nbsp;</span></span></span><br />
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><span ><span style="font-family: &quot;courier new&quot; , &quot;courier&quot; , monospace;">coord_fixed(ratio=1, xlim=c(-100, 100), ylim=c(-100, 100)) + <br />labs(title= "Regeneration",color = "Sample", shape= "Replicate")<br />p</span></span></span></div>
+<br />
+<ol style="margin-bottom: 0pt; margin-top: 0pt;">
+<li dir="ltr" style="background-color: transparent; color: black; font-family: Arial; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; list-style-type: decimal; text-decoration: none; vertical-align: baseline;"><div dir="ltr" style="line-height: 1.38; margin-bottom: 0pt; margin-top: 0pt;">
+<span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Liu Y, Zhou J, White KP. RNA-seq differential expression studies: more</span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><br class="kix-line-break" /></span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">sequence or more replication? Bioinformatics. 2014 Feb 1;30(3):301-4. doi:</span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><br class="kix-line-break" /></span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">10.1093/bioinformatics/btt688. Epub 2013 Dec 6. PubMed PMID: 24319002; PubMed</span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;"><br class="kix-line-break" /></span><span style="background-color: transparent; color: black; font-family: &quot;arial&quot;; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; text-decoration: none; vertical-align: baseline;">Central PMCID: PMC3904521.</span></div>
+</li>
+<li dir="ltr" style="background-color: transparent; color: black; font-family: Arial; font-size: 11pt; font-style: normal; font-variant: normal; font-weight: 400; list-style-type: decimal; text-decoration: none; vertical-align: baseline;">
+    <div class="csl-right-inline">
+Schurch NJ, Schofield P, Gierliński M,
+ et al. How many biological replicates are needed in an RNA-seq 
+experiment and which differential expression tool should you use? <i>RNA</i>. 2016;22(6):839-851. doi:10.1261/rna.053959.115.</div>
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

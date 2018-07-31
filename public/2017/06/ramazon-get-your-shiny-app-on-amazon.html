@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-06-15T21:13:14JST">2017-06-15</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/06/ramazon-get-your-shiny-app-on-amazon.html">Ramazon: Get your shiny app on amazon web services</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  So now you've written a couple of Shiny apps and want to share them with friends, family, colleagues, pets. You'll need to host it somewhere. One solid option is hosting it for free on <a href="https://www.shinyapps.io/">shinyapps.io</a>. The downside to this is that their free tier only allows for 25 hours of CPU time per month. For many this is more than sufficient but if you have several apps that get used frequently you can hit this cap quickly. A second option is hosting the app yourself. This can be done on any machine that you can install <a href="https://www.rstudio.com/products/shiny/shiny-server/">shiny server</a> onto.<br />
+<br />
+Amazon, has precisely such machines, (one is currently <a href="http://f1.2-bitbio.com/">running the F1 plotting app</a> I wrote in a <a href="http://www.2-bitbio.com/2017/05/formula-1-plotting-app-with-shiny.html">previous post</a>) and the best part is they're free to use (for one year...). Setting up an amazon EC2 web instance is pretty straight forward but installing R, shinyserver and configuring the app can be a little tricky especially if you aren't comfortable in a linux environment. That's where the package <a href="https://github.com/AndreaCirilloAC/ramazon">Ramazon</a> comes in.<br />
+<br />
+Ramazon is a packaged <a href="https://andreacirilloblog.wordpress.com/2015/08/18/deploy-your-shiny-app-on-aws-with-a-function/">developed by Andrea Cirillo</a> which I recently helped in updating. The package includes two functions: <code>ramazon()</code> and <code>ramazon_update()</code> which get your shiny web app up and running on amazon hassle free. It works by essentially creating a bash script that will access your instance using ssh, install R and shiny server, install the app packages, and upload your app files using scp.<br />
+<br />
+Here's how to get going:<br />
+<br />
+First we need to set up an <a href="https://aws.amazon.com/ec2/">Amazon EC2</a> instance. To do that we need to create an account on their free tier which is good for one year.<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-V2kUitgMmfI/WUJPusJ7hyI/AAAAAAAAJDs/dmbOYSFEBfoY19OIuJHWJFdjLHhiroMRwCLcBGAs/s1600/Screen%2BShot%2B2017-06-15%2Bat%2B11.12.50.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="117" data-original-width="550" height="68" src="https://1.bp.blogspot.com/-V2kUitgMmfI/WUJPusJ7hyI/AAAAAAAAJDs/dmbOYSFEBfoY19OIuJHWJFdjLHhiroMRwCLcBGAs/s320/Screen%2BShot%2B2017-06-15%2Bat%2B11.12.50.png" width="320" /></a></div>
+<br />
+Next we set up an EC2 micro instance. This tutorial from the original Ramazon developer Andrea Cirillo will get us there:<br />
+<br />
+<iframe allowfullscreen="" frameborder="0" height="485" marginheight="0" marginwidth="0" scrolling="no" src="//www.slideshare.net/slideshow/embed_code/key/4onF3Un38VrbrD" style="border-width: 1px; border: 1px solid #ccc; margin-bottom: 5px; max-width: 100%;" width="595"> </iframe> <br />
+<div style="margin-bottom: 5px;">
+<b> <a href="https://www.slideshare.net/AndreaCirillo1/how-to-launch-an-aws-ec2-instance-51349866" target="_blank" title="How to launch an aws ec2 instance">How to launch an aws ec2 instance</a> </b> from <b><a href="https://www.slideshare.net/AndreaCirillo1" target="_blank">Andrea Cirillo</a>&nbsp;</b><br />
+<br />
+After following the above steps, we should have a running EC2 micro instance. We should also have our keypair file downloaded, and our public IP address for the instance ready. The next step is to move the keypair.pem file to the shiny app folder since that's where Ramazon expects to find it.<br />
+<br />
+Now we're ready to deploy our app! Note that I recommend restarting R so that you only install the necessary packages onto your EC2 instance.<br />
+<pre><code>
+#get Ramazon
+install.packages("devtools")
+library(devtools)
+install_github("andreacirilloac/ramazon")
+# set working directory to the app directory
+setwd("~/your_app")
+# Run Ramazon
+ramazon(Public_DNS, key_pair_name,test = FALSE)&nbsp;
+</code></pre>
+</div>
+<br />
+Your Public_DNS will look like: <code>ec2-XX-XXX-XXX-XX.us-west-2.compute.amazonaws.com</code><br />
+Your key pair will look like:&nbsp; <code>key_pair</code> (drop the .pem)<br />
+<br />
+Ramazon will output a lot of code salad to the terminal and will create a file called bash_script.txt in your working directory. This script is useful for debugging so save it for now!<br />
+<br />
+That should be it! Check out:<br />
+ec2-XX-XXX-XXX-XX.us-west-2.compute.amazonaws.com:3838/your_app<br />
+<br />
+And...?<br />
+<h3>
+It worked!</h3>
+Great! Share your app!<br />
+If the hideously long url turns you off you can configure an existing domain/subdomain you own to point to it. To do that you simply create a DNS A record with the EC2 IP address. Then your app will be available at example.com:3838/your_app. You can get this down to example.com but you need to reconfigure the shiny server to listen on port 80 and forward traffic to the app folder.<br />
+<br />
+<h3>
+It didn't work =(</h3>
+The first thing to check is what exactly didn't work. If when you navigate to the page and see something like this:<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-IXXhUfVQD9Y/WUJKLSjgmKI/AAAAAAAAJDk/YYPW6MwVfSkZ9KrgrithPAvdvhVJAp2YACLcBGAs/s1600/Screen%2BShot%2B2017-06-15%2Bat%2B10.25.12.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="346" data-original-width="449" height="246" src="https://3.bp.blogspot.com/-IXXhUfVQD9Y/WUJKLSjgmKI/AAAAAAAAJDk/YYPW6MwVfSkZ9KrgrithPAvdvhVJAp2YACLcBGAs/s320/Screen%2BShot%2B2017-06-15%2Bat%2B10.25.12.png" width="320" /></a></div>
+<br />
+<br />
+There was a problem with the shiny server install. If you're comfortable with Bash scripts you can look at the bash_script.txt file to make sure everything looks ok. If you can't figure that out contact <a href="https://github.com/AndreaCirilloAC">Andrea Cirillo on github</a> or me and we'll sort it out.<br />
+<br />
+If you see something like this:<br />
+<pre>ERROR: An error has occurred. Check your logs or contact the app author for clarification.</pre>
+It means shiny server was installed but there was a problem with the app. The most likely cause of this is that a necessary package didn't get installed properly. You can figure out what went wrong by adding options(shiny.sanitize.errors = FALSE) to the top line of your server.R and ui.R files. <br />
+<br />
+Finally it's worth noting that your authorized IP address that you use to ssh and scp into the web instance will need updating if you try and run Ramazon on a later date or from a different computer. You can update this setting using the AWS EC2 instance control panel.<br />
+<br />
+<b>Good luck!&nbsp;</b> 
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i> Tweet at me: <a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

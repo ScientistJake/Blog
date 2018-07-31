@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-111736277-3');
+</script>
+
+    <meta charset="utf-8">
+<meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+<link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2018-07-24T21:13:14JST">Jul 24, 2018</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2018/7/clustering-rnaseq-data-using-fuzzy-c.html">Clustering RNAseq data using fuzzy c-means clustering</a></h2>
+  </header>
+
+<div class="article-body">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+<div class="fluid-row" id="header">
+
+</div>
+
+<a href="https://4.bp.blogspot.com/-lMqYD56ZRnA/W1d54QkaSTI/AAAAAAAAOwE/vL8MDeKIBzETyJ1PmOLA4n7AtAl47TH5QCLcBGAs/s1600/peaches.jpeg" imageanchor="1" ><img border="0" src="https://4.bp.blogspot.com/-lMqYD56ZRnA/W1d54QkaSTI/AAAAAAAAOwE/vL8MDeKIBzETyJ1PmOLA4n7AtAl47TH5QCLcBGAs/s400/peaches.jpeg" width="400" height="266" data-original-width="773" data-original-height="515" /></a>
+
+<small>(Image credit: <a href="https://www.thekitchn.com/authors/etracy">Erika Tracy</a>)</small>
+
+
+
+<p>Note this is part three of a series on clustering RNAseq data. Check out <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one on hierarcical clustering here</a> and <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two on K-means clustering here</a>.</p>
+<p>Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one</a> and <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two</a> of this series. Today we’re going to discuss yet another approach, fuzzy c-means clustering a.k.a. soft K-means clustering.</p>
+<p>Fuzzy c-means clustering is useful for RNAseq data since gene expression is inherently noisy and fuzzy clustering is more robust to this noise. Furthermore we can use the membership score, a key feature of soft clustering, to filter genes which don’t have a high membership for any cluster (because they’re probably noise). First let’s talk a bit about what fuzzy c-means is and how it relates to k-means. Feel free to skip down to the part where we apply this algorithm to transcriptomic data.</p>
+<div id="what-is-fuzzy-c-means-clustering" class="section level2">
+<h2>What is fuzzy c-means clustering?</h2>
+<p>Fuzzy c-means clustering, oftentimes called soft k-means clustering, is a variant of k-means clustering in which each datapoint simulataneously exists in all clusters with varying degrees of <strong>membership</strong>. This membership is reported as a decimal between 0 and 1. By convention, we classify the datapoint into the cluster to which it has the highest membership.</p>
+</div>
+<div id="how-is-fuzzy-c-means-clustering-different-from-regular-hard-k-means" class="section level2">
+<h2>How is fuzzy c-means clustering different from regular (hard) K-means?</h2>
+<p>As a <a href="https://en.wikipedia.org/wiki/K-means_clustering">partioning clustering algorithm</a> K-means clustering will assign each and every datapoint to one and only one cluster. One downside to this is it <em>forces</em> in between datapoints into one clsuter or another. Furthermore since the mean of those data dictate the position of the cluster center these outlier points can affect the overall cluster structure.</p>
+<p>Fuzzy c-means on the other hand is very similar except it assigns each data-point a cluster membership score, where being closer to the cluster center means a higher score, and these scores are used to position the centroids. Thus, fuzzy clustering is more robust against noise and outliers since low scoring datapoints have a reduced impact on the position of the cluster center.</p>
+<p>Consider the two plots below, the first is hard k-means clustering and the second is fuzzy c-means. Note that in the latter the cluster membership score is reported and those closer to the center have higher scores. 
+<a href="https://2.bp.blogspot.com/-QxZb8XqQNBM/W1jKxUxMkdI/AAAAAAAAOwo/vNzHYevTDbcrMO2-S5VGr9UIY0xTJCCjwCLcBGAs/s1600/Plot1_plot2.png" imageanchor="1" ><img border="0" src="https://2.bp.blogspot.com/-QxZb8XqQNBM/W1jKxUxMkdI/AAAAAAAAOwo/vNzHYevTDbcrMO2-S5VGr9UIY0xTJCCjwCLcBGAs/s1600/Plot1_plot2.png" data-original-width="1152" data-original-height="1152" /></a>
+
+<p>It’s subtle because these dummy data are pretty clusterable but the centroids are different on account that the data points with low membership have less effect on the centroid position.</p>
+<p>This concept of membership is an important part of fuzzy c-means and we must keep in mind that <strong>every data point belongs in all clusters simultaneously</strong> with varying degrees of membership. Here’s the same data showing membership scores for each of the three clusters:</p>
+<a href="https://2.bp.blogspot.com/-nzvQXri56vg/W1jKyA0J92I/AAAAAAAAOws/dMivJlHBBaUWIS7ncm4Hd1w5h8TPFtjnQCLcBGAs/s1600/P3_p4_p5.png" imageanchor="1" ><img border="0" src="https://2.bp.blogspot.com/-nzvQXri56vg/W1jKyA0J92I/AAAAAAAAOws/dMivJlHBBaUWIS7ncm4Hd1w5h8TPFtjnQCLcBGAs/s1600/P3_p4_p5.png" data-original-width="1067" data-original-height="1600" /></a>
+
+<p>The sum of all of the membership scores for one data point is 1 and by convention we assign the data point to the cluster in which it’s membership is highest. As a side note. By applying a threshold of membership we can de-classify data points and eliminate them from downstream analyses.</p>
+<p>Finally, fuzzy c-means introduces a fuzzifier, <code>m</code>, to determine how fuzzy the clusters are. <code>m=1</code> is equivalent to hard clustering (memberships are binary of 0 or 1) and higher <code>m</code> lowers the membership score of outlying data points.</p>
+<p>Here’s how increasing the <code>m</code> affects the scores:</p>
+<a href="https://2.bp.blogspot.com/-ODtbRyfMZhY/W1jLF93EEZI/AAAAAAAAOxM/8XFcfmpFO-8_LLrRCO-Xa0R-kRInR40vQCLcBGAs/s1600/increasing_m.gif" imageanchor="1" ><img border="0" src="https://2.bp.blogspot.com/-ODtbRyfMZhY/W1jLF93EEZI/AAAAAAAAOxM/8XFcfmpFO-8_LLrRCO-Xa0R-kRInR40vQCLcBGAs/s1600/increasing_m.gif" data-original-width="500" data-original-height="320" /></a>
+
+<p>You can see as m increases the outlying datapoints decrease in membership score.</p>
+</div>
+<div id="how-to-use-fuzzy-c-means-with-rnaseq-data" class="section level2">
+<h2>How to use fuzzy c-means clusteringwith RNAseq data</h2>
+<p>Fuzzy clustering has several advantages over hard clustering when it comes to RNAseq data. Because the positioning of the centroids relies on data point membership the clustering is more robust to the noise inherent in RNAseq data.</p>
+<p>There is a nice package, <a href="https://www.bioconductor.org/packages/release/bioc/html/Mfuzz.html">mFuzz</a>, for performing fuzzy c-means clustering on expression data. Look out for a future tutorial on this package but for now we’ll use the <code>e1071</code> package which includes several soft-clustering algorithms so we can get a better feel for the workflow.</p>
+<p>For this tutorial we’ll use the same dataset we used previously in the post on <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">post on k-means clustering</a>. First we download the data, apply a quick normalization and, for the sake of this tutorial and computation time, we’ll take a subset of the most highly expressed and variable genes. I’m also injecting a random sample of low variance genes to see how the clustering algorithms hold up to this noise.</p>
+<pre class="r"><code>library(edgeR)
+library(SummarizedExperiment)
+load(url(&quot;http://duffel.rail.bio/recount/SRP049355/rse_gene.Rdata&quot;))
+counts &lt;- assays(rse_gene)$counts
+y &lt;- as.matrix((counts))
+y &lt;- DGEList(counts = y, group=c(1,2,3,4,5,6,7,8,9,10))
+y &lt;- calcNormFactors(y)
+z &lt;- cpm(y, normalized.lib.size=TRUE)
+
+#mean/variance calculations
+z_var &lt;- apply(z, 1, var)
+z_mean &lt;- apply(z, 1, mean)
+
+#take only the most highly express/ variable
+#this is just for the sake of this tutorial
+test_data &lt;- z[which(z_var &gt; 50 &amp; z_mean &gt; 50), 6:10]
+
+#sample some of the low variance genes
+test_data &lt;- rbind(test_data, z[sample(which(z_var &lt; 5),1000), 6:10])</code></pre>
+<div id="should-you-filter-the-data" class="section level3">
+<h3>Should you filter the data?</h3>
+<p>Gene expression data is notoriously noisy. For k-means clustering I recommend filtering based on mean expression (drop low counts), variance, FC, or anything else to get rid of background genes. Since fuzzy c-means is more noise robust we could perform an <em>a posteriori</em> filter using the membership scores. This has the benefit of not exluding genes which have an interesting profile but don’t make the filtering threshold. It’s up to you. Either way I would exclude noisy genes from downstream analyses.</p>
+<p>Before clustering however we need to scale the data. This is so that we can identify clusters of genes that share similar expression profiles rather than similar expression levels.</p>
+<pre class="r"><code>scaledata &lt;- t(scale(t(test_data))) # Centers and scales data.
+scaledata &lt;- scaledata[complete.cases(scaledata),]</code></pre>
+</div>
+</div>
+<div id="fuzzy-c-means-estimate-the-fuzzifier" class="section level2">
+<h2>Fuzzy c-means: Estimate the fuzzifier</h2>
+<p>As we described above, fuzzy c-means relies on a fuzzifier parameter to designate how ‘fuzzy’ the clusters are. <a href="https://www.ncbi.nlm.nih.gov/pubmed/20880957">Schwaemmle and Jensen described a method for estimating the fuzzifier</a> and Mattias Futschik <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2139991/">wrapped it into a function</a> which we are using here:</p>
+<pre class="r"><code>mestimate&lt;- function(df){
+  N &lt;-  dim(df)[[1]]
+  D &lt;- dim(df)[[2]]
+  m.sj &lt;- 1 + (1418/N + 22.05)*D^(-2) + (12.33/N +0.243)*D^(-0.0406*log(N) - 0.1134)
+  return(m.sj)
+}
+
+m &lt;- mestimate(scaledata)
+m</code></pre>
+<pre><code>## [1] 2.017234</code></pre>
+</div>
+<div id="fuzzy-c-means-how-many-clusters" class="section level2">
+<h2>Fuzzy c-means: How many clusters?</h2>
+<p>Fuzzy c-means, like K-means, requires <em>a priori</em> knowledge of the number of clusters. The number of clusters can really impact the classifications so it’s an important consideration. <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">Check out the post on k-means clustering</a> for a lengthy discussion for choosing a cluster number. Those methods can be applied to fuzzy c-means as well. For simplicity here we will use the within cluster sum of squared error (elbow method):</p>
+<pre class="r"><code>library(e1071)
+#helper function for the within sum of squared error
+sumsqr &lt;- function(x, clusters){
+  sumsqr &lt;- function(x) sum(scale(x, scale = FALSE)^2)
+  wss &lt;- sapply(split(as.data.frame(x), clusters), sumsqr)
+  return(wss)
+}
+
+#get the wss for repeated clustering
+iterate_fcm_WSS &lt;- function(df,m){
+  totss &lt;- numeric()
+  for (i in 2:20){
+    FCMresults &lt;- cmeans(df,centers=i,m=m)
+    totss[i] &lt;- sum(sumsqr(df,FCMresults$cluster))
+  }
+  return(totss)
+}
+wss_2to20 &lt;- iterate_fcm_WSS(scaledata,m)
+plot(1:20, wss_2to20[1:20], type=&quot;b&quot;, xlab=&quot;Number of Clusters&quot;, ylab=&quot;wss&quot;)</code></pre>
+<a href="https://2.bp.blogspot.com/-yOFFHpjuJG8/W1jKzKLH9NI/AAAAAAAAOw0/hyqat-wlRRU0aGfRlGhLnUVeZ4sEly3mgCLcBGAs/s1600/wss_plot.png" imageanchor="1" ><img border="0" src="https://2.bp.blogspot.com/-yOFFHpjuJG8/W1jKzKLH9NI/AAAAAAAAOw0/hyqat-wlRRU0aGfRlGhLnUVeZ4sEly3mgCLcBGAs/s1600/wss_plot.png" data-original-width="960" data-original-height="960" /></a>
+
+<p>It looks like the inflection is between 4 and 6 clusters. In a full analysis I’d recommend comparing several different cluster numbers. Higher cluster numbers can unmask substructures that are hidden in lower cluster numbers. On the other hand with too many clusters can create redundant or highly overlapping clusters.</p>
+<p>Here we will proceed with k=5.</p>
+<pre class="r"><code>k = 5
+fcm_results &lt;- cmeans(scaledata,centers=k,m=m)</code></pre>
+<p>First we’ll look the centroid profiles:</p>
+<pre class="r"><code>#import some data manipulation functions
+library(reshape2)
+library(tidyr)
+library(dplyr)
+
+#get the centroids into a long dataframe:
+fcm_centroids &lt;- fcm_results$centers
+fcm_centroids_df &lt;- data.frame(fcm_centroids)
+fcm_centroids_df$cluster &lt;- row.names(fcm_centroids_df)
+centroids_long &lt;- tidyr::gather(fcm_centroids_df,&quot;sample&quot;,'value',1:5)
+
+ggplot(centroids_long, aes(x=sample,y=value, group=cluster, colour=as.factor(cluster))) + 
+  geom_line() +
+  xlab(&quot;Time&quot;) +
+  ylab(&quot;Expression&quot;) +
+  labs(title= &quot;Cluster Expression by Time&quot;,color = &quot;Cluster&quot;)</code></pre>
+<a href="https://4.bp.blogspot.com/-n77Y9tTD_lE/W1jKzBifY_I/AAAAAAAAOww/kKjmqRnTU4EqbzQN0Y62cJISsb4UdWDVQCLcBGAs/s1600/cores.png" imageanchor="1" ><img border="0" src="https://4.bp.blogspot.com/-n77Y9tTD_lE/W1jKzBifY_I/AAAAAAAAOww/kKjmqRnTU4EqbzQN0Y62cJISsb4UdWDVQCLcBGAs/s1600/cores.png" data-original-width="1152" data-original-height="960" /></a>
+
+<p>So we have some interesting patterns! The cluster centroids are well separated although there might be some redundancy in clusters 4 and 5 as the profiles look similar.</p>
+<p>We can assess the similarity of the cluster centroids to identify redundancy or high overlap. To do this we correlate the cluster centroids with each other. If the centroids are too similar then they will have a high correlation. If your K number produces clusters with high correlation (say above 0.85) then consider reducing the number of clusters.</p>
+<p>Correlate the centroids to see how similar they are:</p>
+<pre class="r"><code>cor(t(fcm_centroids))</code></pre>
+<pre><code>##             1          2          3           4          5
+## 1  1.00000000  0.5798138 -0.6883966  0.04777641 -0.8032537
+## 2  0.57981382  1.0000000 -0.3044430 -0.59758901 -0.8926612
+## 3 -0.68839661 -0.3044430  1.0000000 -0.57595164  0.3023986
+## 4  0.04777641 -0.5975890 -0.5759516  1.00000000  0.5233862
+## 5 -0.80325371 -0.8926612  0.3023986  0.52338617  1.0000000</code></pre>
+<p>It looks like we have good separation of the clusters as no cor score is above 0.85.</p>
+<p>Now’s the fun part where we can plot the gene profiles by cluster. We simply subset the results and the centroids by cluster and plot it out. We can also set a color scale for the membership score:</p>
+<pre class="r"><code>#start with the input data
+fcm_plotting_df &lt;- data.frame(scaledata)
+
+#add genes
+fcm_plotting_df$gene &lt;- row.names(fcm_plotting_df)
+
+#bind cluster assinment
+fcm_plotting_df$cluster &lt;- fcm_results$cluster
+#fetch the membership for each gene/top scoring cluster
+fcm_plotting_df$membership &lt;- sapply(1:length(fcm_plotting_df$cluster),function(row){
+  clust &lt;- fcm_plotting_df$cluster[row]
+  fcm_results$membership[row,clust]
+})
+
+k_to_plot = 1
+
+#subset the dataframe by the cluster and get it into long form
+#using a little tidyr action
+cluster_plot_df &lt;- dplyr::filter(fcm_plotting_df, cluster == k_to_plot) %&gt;%
+  dplyr::select(.,1:5,membership,gene) %&gt;%
+  tidyr::gather(.,&quot;sample&quot;,'value',1:5)
+
+#order the dataframe by score
+cluster_plot_df &lt;- cluster_plot_df[order(cluster_plot_df$membership),]
+#set the order by setting the factors using forcats
+cluster_plot_df$gene = forcats::fct_inorder(cluster_plot_df$gene)
+
+#subset the cores by cluster
+core &lt;- dplyr::filter(centroids_long, cluster == k_to_plot)
+
+ggplot(cluster_plot_df, aes(x=sample,y=value)) + 
+    geom_line(aes(colour=membership, group=gene)) +
+    scale_colour_gradientn(colours=c('blue1','red2')) +
+    #this adds the core 
+    geom_line(data=core, aes(sample,value, group=cluster), color=&quot;black&quot;,inherit.aes=FALSE) +
+    xlab(&quot;Time&quot;) +
+    ylab(&quot;Expression&quot;) +
+    labs(title= paste0(&quot;Cluster &quot;,k_to_plot,&quot; Expression by Time&quot;),color = &quot;Score&quot;)</code></pre>
+<a href="https://2.bp.blogspot.com/-OYfoV2h2eYw/W1jKzrmCbtI/AAAAAAAAOw4/Y5cH8j1QuN4sOQqPydDHh9T7tJtribkDACLcBGAs/s1600/c1.png" imageanchor="1" ><img border="0" src="https://2.bp.blogspot.com/-OYfoV2h2eYw/W1jKzrmCbtI/AAAAAAAAOw4/Y5cH8j1QuN4sOQqPydDHh9T7tJtribkDACLcBGAs/s1600/c1.png" data-original-width="1152" data-original-height="960" /></a>
+
+<p>In this plot, genes with a profile close to the core have a membership score approaching 1 (red) while those with divergent patterns have a score closer to 0 (blue). You can see there is some noise but the genes mostly fit the cluster model. If you observe many genes with low scores consider increasing your K as they’ve been ‘forced’ into a cluster in which they don’t belong. Too much noise in the data can also lead to low scoring genes.</p>
+<div id="should-you-filter-the-data-redux" class="section level3">
+<h3>Should you filter the data (redux)?</h3>
+<p>This is the point where I’d filter the data based on membership score before proceeding to downstream analysis. This will leave out genes that don’t fit well into any cluster, which are probably noise, before proceeding.</p>
+</div>
+</div>
+<div id="comparing-cluster-methods" class="section level2">
+<h2>Comparing cluster methods:</h2>
+<p>Let’s see how this compares to hard K-means clustering!</p>
+<p>First we perform the kmeans:</p>
+<pre class="r"><code>#perform the kmeans
+kmeans_results &lt;- kmeans(scaledata,centers=5)</code></pre>
+<p>Now we will use the WGCNA function <code>matchLabels</code> to line up the cluster assignments. This doesn’t change the structure of the cluster, but attempts to rename the cluster based on the cluster assignment from another dataset. Then we calculate the cluster overlap using the <code>overlapTable</code> function.</p>
+<pre class="r"><code>#these functions from the WCGNA package are great for this:
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/matchLabels.R')
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/accuracyMeasures.R')
+
+#grab the cluster vector for kmeans
+kmeans_clusters &lt;- kmeans_results$cluster
+#grab the cluster vector for fuzzy
+fcm_clusters &lt;- fcm_results$cluster
+
+#match the labels
+kmeans_clusters_matched &lt;- matchLabels(kmeans_clusters,fcm_clusters)
+
+#add a prefix so we can tell them apart:
+kmeans_clusters_matched &lt;- paste0('K-',kmeans_clusters_matched)
+fcm_clusters &lt;- paste0('FCM-',fcm_clusters)
+
+#calculate the overlap
+OT&lt;- overlapTable(kmeans_clusters_matched, fcm_clusters)
+#get rid of 0 values...
+OT$pTable[OT$pTable == 0] &lt;- 2e-300
+
+textMatrix= paste(signif(OT$countTable, 2), &quot;\n(&quot;,
+                      signif(OT$pTable, 1), &quot;)&quot;, sep= &quot;&quot;)
+dim(textMatrix)= dim(OT$countTable)
+par(mar=c(10,10,10,10))
+library(gplots)
+heatmap.2(x= -log(OT$pTable),
+          dendrogram = &quot;none&quot;,
+          Colv =F,
+          Rowv = F,
+          scale = c(&quot;none&quot;),
+          col=&quot;heat.colors&quot;,
+          na.rm=TRUE,
+          cellnote = textMatrix,
+          notecol=&quot;grey30&quot;,
+          notecex=0.6,
+          trace=c(&quot;none&quot;),
+          cexRow = 0.8,
+          cexCol = 0.8,
+          main = &quot;Cluster-Cluster Overlap&quot;,
+          xlab = &quot;Fuzzy C-means (k=5)&quot;,
+          ylab = &quot;Kmeans (k=5)&quot;)</code></pre>
+<a href="https://4.bp.blogspot.com/-eu__KUGeT4E/W1jKwamlMAI/AAAAAAAAOwk/vkAtBic-Jkcml2Tev-M1alvxXfil8NSfwCLcBGAs/s1600/OTheat.png" imageanchor="1" ><img border="0" src="https://4.bp.blogspot.com/-eu__KUGeT4E/W1jKwamlMAI/AAAAAAAAOwk/vkAtBic-Jkcml2Tev-M1alvxXfil8NSfwCLcBGAs/s1600/OTheat.png" data-original-width="1152" data-original-height="960" /></a>
+
+<p>As you can see there is some discrepancy in how the two algorithms behave but overall they perform similarly. Since we enriched our dataset in the most highly variable genes we would expect the clustering to be fairly robust in both cases. As we noted above, fuzzy c-means performs better in noisier datasets which might be more typical than our practice data here.</p>
+</div>
+<div id="what-to-do-from-here" class="section level2">
+<h2>What to do from here?</h2>
+<p>Once we are happy with our clustering we can do lots of analyses on the clustered dataset. Including but not limited to:</p>
+<ul>
+	<li>Correlate phenotypic data with our clusters (can use the centroids for this).</li>
+	<li>Perform gene set enrichmnet analysis on our clusters (GSEA).</li>
+	<li>Test for gene ontology (GO) term enrichment in our clusters.</li>
+	<li>Compare cluster membership between datasets.</li>
+	<li>Analyze the highest scoring genes within clusters (core genes).</li>
+</ul>
+<p>Hope this helps! Tune in for part four of this series on clustering when we take the mFuzz package for a test drive!</p>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.5.0 (2018-04-23)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS Sierra 10.12.6
+## 
+## Matrix products: default
+## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+##  [1] parallel  stats4    grid      stats     graphics  grDevices utils    
+##  [8] datasets  methods   base     
+## 
+## other attached packages:
+##  [1] gplots_3.0.1                bindrcpp_0.2.2             
+##  [3] dplyr_0.7.6                 tidyr_0.8.1                
+##  [5] reshape2_1.4.3              SummarizedExperiment_1.10.1
+##  [7] DelayedArray_0.6.1          BiocParallel_1.14.2        
+##  [9] matrixStats_0.53.1          Biobase_2.40.0             
+## [11] GenomicRanges_1.32.6        GenomeInfoDb_1.16.0        
+## [13] IRanges_2.14.10             S4Vectors_0.18.3           
+## [15] BiocGenerics_0.26.0         edgeR_3.22.3               
+## [17] limma_3.36.2                gridExtra_2.3              
+## [19] e1071_1.6-8                 gganimate_0.9.9.9999       
+## [21] ggplot2_3.0.0              
+## 
+## loaded via a namespace (and not attached):
+##  [1] transformr_0.1.0       gtools_3.8.1           assertthat_0.2.0      
+##  [4] GenomeInfoDbData_1.1.0 yaml_2.1.19            progress_1.2.0        
+##  [7] gdtools_0.1.7          pillar_1.3.0           backports_1.1.2       
+## [10] lattice_0.20-35        glue_1.3.0             digest_0.6.15         
+## [13] XVector_0.20.0         colorspace_1.3-2       htmltools_0.3.6       
+## [16] Matrix_1.2-14          plyr_1.8.4             lpSolve_5.6.13        
+## [19] pkgconfig_2.0.1        magick_1.9             zlibbioc_1.26.0       
+## [22] purrr_0.2.5            patchwork_0.0.1        scales_0.5.0          
+## [25] gdata_2.18.0           svglite_1.2.1          tweenr_0.1.5.9999     
+## [28] tibble_1.4.2           farver_1.0             withr_2.1.2           
+## [31] lazyeval_0.2.1         magrittr_1.5           crayon_1.3.4          
+## [34] evaluate_0.11          forcats_0.3.0          class_7.3-14          
+## [37] tools_3.5.0            prettyunits_1.0.2      hms_0.4.2             
+## [40] stringr_1.3.1          munsell_0.5.0          locfit_1.5-9.1        
+## [43] compiler_3.5.0         caTools_1.17.1.1       rlang_0.2.1           
+## [46] classInt_0.2-3         units_0.6-0            RCurl_1.95-4.11       
+## [49] bitops_1.0-6           labeling_0.3           rmarkdown_1.10        
+## [52] gtable_0.2.0           DBI_1.0.0              R6_2.2.2              
+## [55] knitr_1.20             bindr_0.1.1            rprojroot_1.3-2       
+## [58] KernSmooth_2.23-15     stringi_1.2.4          Rcpp_0.12.17          
+## [61] sf_0.6-3               spData_0.2.9.0         tidyselect_0.2.4</code></pre>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>  
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  
+
+  <div class="col-md-4">
+  <!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

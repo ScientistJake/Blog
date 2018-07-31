@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-05-10T21:13:14JST">2017-05-10</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/05/using-shiny-to-make-web-plotter-for.html">Using Shiny to make a web plotter for RNAseq timeseries data</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  <div class="section level2" id="shiny">
+<h2>
+Shiny!</h2>
+Let’s say you have finished a nice transcriptomics study and want to make your results accessable to the rest of the lab. One option is to email collaborators large datatables and let them find and plot the data they need but this has major drawbacks:<br />
+</br>
+<ol style="list-style-type: decimal;">
+<li>The datatables are usually quite large.</li>
+<li>After each update (if you for example add new annotations) the previously distributed tables are out of date.</li>
+<li>Automating plotting functions makes it easy to repeat for different genes.</li>
+</ol>
+</br>
+To get around these it’s a good idea to put the data in a database and create a simple user interface. This can be done many ways using python, mysql, javascript or some combination thereof. Here we’re going to do it in R using the shiny package.<br />
+
+Shiny is a framework that lets you create web apps while writing them entirely in R. It consists of two parts, a server script, which is essentially your R code written in Shiny’s reactive syntax, and a user interface script, which tells Shiny how to render the html and output the results.<br />
+
+</br>The syntax of shiny is a little tricky at first but is easy to use once you get the hang of it. Shiny relies on a new (to R) concept: <a href="https://shiny.rstudio.com/articles/reactivity-overview.html">Reactivity</a>. Reactivity is when a variable changes and all variables downstream of it change accordingly. It is essentially like re running your R-script over and over each time an input is changed. The major difference is that in Shiny it only runs the relevant code chunks that are ‘linked’ to the variable that has changed.<br />
+
+So what does this look like as a syntax? We can make a variable reactive by taking input from the user as ‘input$variable’.<br />
+
+For example to assign ‘gene’ using a user input 'genename' we would write:<br />
+
+<pre class="r"><code>gene &lt;- input$genename</code></pre>
+The variable ‘gene’ is reactive because each time the user changes the input 'genename', the value of 'gene' will change accordingly.<br />
+
+</br>Now that ‘gene’ is reactive. There are two important things to remember:<br />
+</br>
+<ol style="list-style-type: decimal;">
+<li>gene will now be used in downstream functions as ‘gene()’.</li>
+<li>Since ‘gene’ is reactive, we need to place all downstream functions into reactive expressions.</li>
+</ol>
+</br>The latter point is the cause of most shiny errors so its worth reading about in the <a href="https://shiny.rstudio.com/tutorial/lesson6/">shiny documentation</a>. A basic reactive expression is simply ‘reactive({})’. For example if we wanted to append ‘gene’ with ‘ID’:<br />
+
+<pre class="r"><code>geneID &lt;- reactive({
+  paste0(gene(),"ID")
+})</code></pre>
+</div>
+<div class="section level1" id="write-the-code">
+<h1>
+Write the code</h1>
+Ok let’s learn by doing! We’re going to build up the ui and server files separately then run them together at the very end but first we will write the code ‘normally’ then make it to reactive for the server.<br />
+
+</br>The code below reads in a table of RNAseq data, takes just the first 1000 entries, subsets the data using the gene ‘ENSMUSG00000000028’, converts the subset to long format, and plots that gene using ggplot.<br />
+
+</br>The data is timeseries RNAseq data from <a href="http://www.nature.com/nprot/journal/v7/n3/full/nprot.2012.016.html">Trapnell et al.</a> using the <a href="http://bowtie-bio.sourceforge.net/recount/">recount resource</a>.<br />
+
+<pre class="r"><code>## Non-shiny example
+mydat &lt;- read.table(url("http://bowtie-bio.sourceforge.net/recount/countTables/trapnell_count_table.txt"), sep="\t", header =T, row.names = 1)
+#drop low counts and pull the first 1000 records
+mydat &lt;- mydat[rowSums(mydat &gt; 1) &gt;=4,]
+mydat &lt;- mydat[1:1000,]
+#re-arrange so the samples are increasing with time
+#I know this order from the meta file
+mydat &lt;- mydat[c(4,3,1,2)]
+#add an ID column we'll use for plotting
+mydat$ID &lt;- rownames(mydat)
+
+#subset the dataframe by gene(s) of interest
+gene1 &lt;- c("ENSMUSG00000000028")
+geneCounts &lt;- mydat[rownames(mydat)%in%gene1,]
+
+#add a vector with the genenames
+geneCounts$ID &lt;- rownames(geneCounts)
+
+#put in long form for plotting
+library(reshape)
+geneCountsLong &lt;- melt(geneCounts)</code></pre>
+<pre><code>## Using ID as id variables</code></pre>
+<pre class="r"><code>#plot using ggplot
+library(ggplot2)
+p &lt;- ggplot(geneCountsLong, aes(x=geneCountsLong$variable, y=geneCountsLong$value, group=ID, colour=ID)) + 
+  geom_line() +
+  xlab("Sample") +
+  ylab("counts")
+print(p)</code></pre>
+<a href="https://4.bp.blogspot.com/-qTJJgMH5c9w/WRLpkT8APzI/AAAAAAAAIi8/SkAFlanB3DQ1qc5_Stv4NV_ABGoNNmHQwCLcB/s1600/Rplot.png" imageanchor="1" ><img border="0" src="https://4.bp.blogspot.com/-qTJJgMH5c9w/WRLpkT8APzI/AAAAAAAAIi8/SkAFlanB3DQ1qc5_Stv4NV_ABGoNNmHQwCLcB/s1600/Rplot.png" /></a>
+</div>
+<div class="section level1" id="build-the-server-code">
+<h1>
+Build the server code</h1>
+So now let’s build this into a reactive session using input$gene as the input. mydat stays the same so i don’t include those calls here. Remember, once a variable is reactive, we need to access it inside a reactive expression. So in the chunk below, gene1 becomes reactive when we assign it to the user input ‘gene’. Then in the geneCounts assignment we put that entire expression inside a ‘reactive({})’ wrapper function and call ‘gene1’ as ‘gene1()’.<br />
+
+<pre class="r"><code>library(shiny)
+# server
+gene1 &lt;- c(input$gene)
+#now need to make the next function reactive:
+geneCounts &lt;- reactive({
+  mydat[rownames(mydat)%in%gene1(),]
+})</code></pre>
+Now we do the same with the ggplot chunk:<br />
+
+<pre class="r"><code># server 
+library(reshape)
+geneCountsLong &lt;- reactive({
+  melt(geneCounts())
+})
+
+library(ggplot2)
+p &lt;- reactive({
+  ggplot(geneCountsLong(), aes(x=geneCountsLong()$variable, y=geneCountsLong()$value, group=ID, colour=ID)) + 
+  geom_line() +
+  xlab("Sample") +
+  ylab("counts")
+})</code></pre>
+To get the plot ‘p’ to show up on the user interface we use the ‘renderPlot({})’ wrapper and put it into an output variable that we can access on the ui side.<br />
+
+<pre class="r"><code># server
+output$plot1 &lt;- renderPlot({
+  print(p())
+})</code></pre>
+</div>
+<div class="section level1" id="build-the-ui">
+<h1>
+Build the UI</h1>
+Great! Now it’s time to build a user interface. You can read up about <a href="https://shiny.rstudio.com/tutorial/lesson2/">customizing the ui</a>. Here we make a sidebar with a textbox input to enter a gene name. Note that this creates the variable ‘input$gene’ that we can then use on the server side. The variable name is the first argument in ‘textInput()’. Then in the mainpanel we output ‘plot1’ from the server side we developed above.<br />
+
+<pre class="r"><code>#ui
+ui &lt;- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      textInput('gene', 'Input gene name', value = "", width = NULL, placeholder = 'e.g. ENSMUSG00000000028')
+    ),
+    mainPanel(plotOutput("plot1"))
+  )
+)</code></pre>
+</div>
+<div class="section level1" id="put-it-all-together">
+<h1>
+Put it all together</h1>
+Now we can build all of this into our app to see how it runs. You can build a shiny app using the following template:<br />
+
+<ol style="list-style-type: decimal;">
+<li>All ‘library’ calls (important if you host on shinyapps.io)</li>
+<li>Non-reactive expressions like reading data etc.</li>
+<li>Server side expressions inside the server function wrapper: ‘server &lt;- function(input, output) {}’</li>
+<li>User interface expressions insde the ui fluid page function ‘ui &lt;- fluidPage()’</li>
+<li>A call to run the app with ‘shinyApp(ui = ui, server = server)’</li>
+</ol>
+Below I’ve pasted those elements in that order:<br />
+
+<pre class="r"><code>#library calls
+library(reshape)
+library(ggplot2)
+library(shiny)
+
+# Non- reactive elements go outside the server function
+mydat &lt;- read.table(url("http://bowtie-bio.sourceforge.net/recount/countTables/trapnell_count_table.txt"), sep="\t", header =T, row.names = 1)
+mydat &lt;- mydat[rowSums(mydat &gt; 1) &gt;=4,]
+mydat &lt;- mydat[1:1000,]
+mydat &lt;- mydat[c(4,1,2,2)]
+mydat$ID &lt;- rownames(mydat)
+
+#server pasted together from above
+server &lt;- function(input, output) {
+  gene &lt;- reactive({
+    c(input$gene)
+  })
+  geneCounts &lt;- reactive({
+  mydat[rownames(mydat)%in%gene(),]
+  })
+  geneCountsLong &lt;- reactive({
+    melt(geneCounts())
+  })
+  p &lt;- reactive({
+    ggplot(geneCountsLong(), aes(x=geneCountsLong()$variable, y=geneCountsLong()$value, group=ID, colour=ID)) + 
+    geom_line() +
+    xlab("Sample") +
+    ylab("counts")
+  })
+  output$plot1 &lt;- renderPlot({
+  print(p())
+  })
+}
+
+#ui pasted from above
+ui &lt;- fluidPage(
+    headerPanel('Simple Gene Plotter!'),
+    sidebarPanel(
+      textAreaInput('gene', 'Input gene name', value = "", width = NULL, placeholder = 'e.g. ENSMUSG00000000001')
+    ),
+    mainPanel(plotOutput("plot1")
+    )
+  )
+
+#this runs the app
+shinyApp(ui = ui, server = server)</code></pre>
+Note that its sometimes useful to have your ui.R and server.R files separated. Especially if you are hosting it at <a class="uri" href="https://www.blogger.com/shinyapps.io">shinyapps.io</a>.<br />
+
+It works! Here’s screen cap of our app:<br />
+
+<a href="https://4.bp.blogspot.com/-X7anLzETe1w/WRLxWrltgjI/AAAAAAAAIjM/9i2YIhTLvuYLz7sHWbtyQRhoH79ju8KwgCLcB/s1600/Screen%2BShot%2B2017-05-10%2Bat%2B12.08.07.png" imageanchor="1" ><img border="0" src="https://4.bp.blogspot.com/-X7anLzETe1w/WRLxWrltgjI/AAAAAAAAIjM/9i2YIhTLvuYLz7sHWbtyQRhoH79ju8KwgCLcB/s1600/Screen%2BShot%2B2017-05-10%2Bat%2B12.08.07.png" /></a>
+</div>
+<div class="section level1" id="make-it-nice">
+<h1>
+Make it nice</h1>
+Now we can add all the bells and whistles you’d expect from a normal webb app including images, css, even javascript. First though I usually tweak the core functions to be robust.<br />
+
+Here we want to be able to input multiple genes separated by a comma. Also rather than plotting as we type we want the app to wait. To solve the former we will add some code to split the input by comma. To solve the latter we will add a button that runs the app after it’s clicked.<br />
+
+Here we’re adding a ‘stringsplit()’ function to parse the user input so that multiple gene names can be used for plotting. We also changed the ‘reactive({})’ to ‘eventReactive({})’ This will wait until the user activates the code using a botton on the ui side. The ‘event’ to activate the code is ‘input$do’.<br />
+
+<pre class="r"><code>#server update
+gene &lt;- eventReactive(input$do, {
+    unlist(strsplit(as.character(input$gene), ',', fixed=TRUE))
+  }, ignoreNULL= T)</code></pre>
+On the ui side, we’ll change the prompt dialogue to tell the user to enter a comma separated list to work with our ‘strsplit()’ function on the server side. We also change the example prompt showing the expected input using ‘textAreaInput(.., placeholder= )’. Finally we add an action button below the input that activates ‘input$do’ on the server side with ‘actionButton()’<br />
+
+<pre class="r"><code>#ui update
+ui &lt;- fluidPage(
+    headerPanel('Simple Gene Plotter!'),
+    sidebarPanel(
+      textAreaInput('gene', 'Input gene names separated by comma:', value = "", width = NULL, placeholder = 'e.g. ENSMUSG00000000028,ENSMUSG00000000001'),
+      actionButton("do", "Evaluate!")
+    ),
+    mainPanel(plotOutput("plot1")
+    )
+  )</code></pre>
+This is what it looks like all together. You can copy and paste this direectly into your R terminal to see it live.<br />
+
+<pre class="r"><code>library(reshape)
+library(ggplot2)
+library(shiny)
+
+mydat &lt;- read.table(url("http://bowtie-bio.sourceforge.net/recount/countTables/trapnell_count_table.txt"), sep="\t", header =T, row.names = 1)
+mydat &lt;- mydat[rowSums(mydat &gt; 1) &gt;=4,]
+mydat &lt;- mydat[1:1000,]
+mydat &lt;- mydat[c(4,1,2,2)]
+mydat$ID &lt;- rownames(mydat)
+
+server &lt;- function(input, output) {
+  gene &lt;- eventReactive(input$do, {
+    unlist(strsplit(as.character(input$gene), ',', fixed=TRUE))
+  }, ignoreNULL= T)
+  geneCounts &lt;- reactive({
+  mydat[rownames(mydat) %in% c(gene()),]
+  })
+  geneCountsLong &lt;- reactive({
+    melt(geneCounts())
+  })
+  p &lt;- reactive({
+    ggplot(geneCountsLong(), aes(x=geneCountsLong()$variable, y=geneCountsLong()$value, group=ID, colour=ID)) + 
+    geom_line() +
+    xlab("Sample") +
+    ylab("counts")
+  })
+  output$plot1 &lt;- renderPlot({
+  print(p())
+  })
+}
+
+ui &lt;- fluidPage(
+    headerPanel('Simple Gene Plotter!'),
+    sidebarPanel(
+      textAreaInput('gene', 'Input gene names separated by comma:', value = "", width = NULL, placeholder = 'e.g. ENSMUSG00000000028,ENSMUSG00000000001'),
+      actionButton("do", "Evaluate!")
+    ),
+    mainPanel(plotOutput("plot1")
+    )
+  )
+
+shinyApp(ui = ui, server = server)</code></pre>
+Sweet! Here’s a screen cap of the app:<br />
+<a href="https://1.bp.blogspot.com/-1BziL-KUxqI/WRLySpAdAwI/AAAAAAAAIjc/vDm5Ga-mMFgb08y139Ir5lI2AzmdhbQXACLcB/s1600/Screen%2BShot%2B2017-05-10%2Bat%2B12.57.38.png" imageanchor="1" ><img border="0" src="https://1.bp.blogspot.com/-1BziL-KUxqI/WRLySpAdAwI/AAAAAAAAIjc/vDm5Ga-mMFgb08y139Ir5lI2AzmdhbQXACLcB/s1600/Screen%2BShot%2B2017-05-10%2Bat%2B12.57.38.png" /></a>
+</div>
+<div class="section level1" id="building-on-this">
+<h1>
+Building on this</h1>
+There’s a lot to expand with on this little example. Shiny supports custom css, and even javascript. We may want to allow users to downlaod the image by adding a <a href="https://shiny.rstudio.com/reference/shiny/latest/downloadButton.html">download widget</a>. We could also output a table of the results to see the actual values using ‘renderTable()’. For inspiration you can always check out the <a href="https://shiny.rstudio.com/gallery/">shiny gallery</a>!<br />
+
+</div>
+<div class="section level1" id="hosting-your-app">
+<h1>
+Hosting your app</h1>
+Finally you’ll want to distribute your app. You can host your app for free at <a class="uri" href="https://www.blogger.com/shinyapps.io">shinyapps.io</a>. Or you can run it internally on a lab computer. Lot’s more information <a href="https://shiny.rstudio.com/tutorial/lesson7/">on this shiny tutorial</a><br />
+<br />
+<h2>
+Session</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.0 (2016-05-03)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X 10.10 (Yosemite)
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] shiny_0.14.2  ggplot2_2.2.0 reshape_0.8.6
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.7      knitr_1.15       magrittr_1.5     munsell_0.4.3   
+##  [5] xtable_1.8-2     colorspace_1.3-0 R6_2.2.0         stringr_1.1.0   
+##  [9] plyr_1.8.4       tools_3.3.0      grid_3.3.0       gtable_0.2.0    
+## [13] htmltools_0.3.5  yaml_2.1.14      lazyeval_0.2.0   rprojroot_1.2   
+## [17] digest_0.6.10    assertthat_0.1   tibble_1.2       mime_0.5        
+## [21] evaluate_0.10    rmarkdown_1.4    labeling_0.3     stringi_1.1.2   
+## [25] scales_0.4.1     backports_1.0.4  httpuv_1.3.3</code></pre>
+</div>
+</div>
+  
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+    <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

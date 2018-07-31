@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-04-12T21:13:14JST">2017-04-12</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/04/animated-3d-pca-plots-in-r.html">Animated 3D PCA plots in R!</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  <p>Principle component analysis (PCA) is a great way to visualize the overall architecture of RNAseq data. I routinely run PCA on my sample table to see if my replicates group together or after averaging my replicates to visualize how similar one condition is to another.</p>
+<p>The algorithm itself reduces the dimensionality of the data while maintaining the overall variance. It does this by finding orthogonal axes that maximize the variation in the dataset. These axes are referred to as principle components. We can then use these principle components to visualize the variation between datasets by plotting said components, usually the first two. Let’s start with that.</p>
+<p>First we pull down some test RNAseq data and take just the first 1000 genes:</p>
+<pre class="r"><code>mydat &lt;- read.table(url(&quot;http://bowtie-bio.sourceforge.net/recount/countTables/trapnell_count_table.txt&quot;), sep=&quot;\t&quot;, header =T, row.names = 1)
+#drop low counts and pull the first 1000 records
+mydat &lt;- mydat[rowSums(mydat &gt; 1) &gt;=4,]
+mydat &lt;- mydat[1:1000,]
+y &lt;- as.matrix((mydat))</code></pre>
+<p>Next we perform the PCA. Log transformation is optional but I usually do it for RNAseq data.</p>
+<pre class="r"><code>log_data = log(y+1,2) 
+group &lt;- factor(c(colnames(y)))
+#this puts samples as rows, genes as columns 
+transpose &lt;- t(log_data) 
+transpose_df &lt;- as.data.frame(transpose)
+#this is the function that does the PCA
+pca.data &lt;- prcomp(transpose_df)</code></pre>
+<p>You can inspect the output of the PCA. Notice there are 4 PCA loadings since we used 4 samples. The report below shows us the standard deviation of each component. Note that it decreases with each loading since each PC captures less variation. This is reflected in the proportion of variance; the percentage of the variation captured by each PC.</p>
+<pre class="r"><code>scores = as.data.frame(pca.data$x) 
+summary(pca.data)</code></pre>
+<pre><code>## Importance of components:
+##                            PC1     PC2    PC3       PC4
+## Standard deviation     25.7222 14.0236 9.9563 2.812e-14
+## Proportion of Variance  0.6911  0.2054 0.1035 0.000e+00
+## Cumulative Proportion   0.6911  0.8965 1.0000 1.000e+00</code></pre>
+<p>In most presentations you will see the PCA plotted in 2D space using the first two PCs since they are the most important. Let’s do that here (or you can make something nicer in ggplot):</p>
+<pre class="r"><code>library(rgl)
+plot(scores[,1:2], col=c(1:4),cex=2, pch=16,
+     xlim = c(-50,50), ylim=c(-50,50), main=&quot;PCA-2D&quot;)
+text(scores[,1], scores[,2], 
+     labels=c(rownames(scores)), cex= 0.7, pos=3)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-0Err53TJSeI/WOJIiROq_PI/AAAAAAAAHpM/zWyc_C362nIQ0b4_SeLvepanaMWy62shQCLcB/s1600/Rplot.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://4.bp.blogspot.com/-0Err53TJSeI/WOJIiROq_PI/AAAAAAAAHpM/zWyc_C362nIQ0b4_SeLvepanaMWy62shQCLcB/s400/Rplot.png" width="400" /></a></div>
+<p>This is a good way to represent the data since the first two PCs are the most important. But we know that there are more components not visualized (up to the number of samples). So in theory we can plot the first 3 PCs to get a better idea of the relationship of these these samples. Note I use scores[,1:3] to get the first three loadings.</p>
+<pre class="r"><code>plot3d(scores[,1:3], col=c(1:4), size=10, type='p', 
+       xlim = c(-50,50), ylim=c(-50,50), zlim=c(-50,50))
+text3d(scores[,1]+2, scores[,2]+10, scores[,3]+2,
+       texts=c(rownames(scores)), cex= 0.7, pos=3)</code></pre>
+<p>Then you can save the image:</p>
+<pre class="r"><code>#output image
+rgl.snapshot(&quot;3DPCA-Merge.png&quot;, &quot;png&quot;) 
+#ouput pdf:
+rgl.postscript(&quot;3DPCA-Merge.pdf&quot;, &quot;pdf&quot;)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-LfR49EMjgNU/WOJOUn4Uz1I/AAAAAAAAHpk/DTBNCvjFcsw9CcCP7wB7kcNZDzExdEJ8ACLcB/s1600/3DPCA-Merge.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="400" src="https://2.bp.blogspot.com/-LfR49EMjgNU/WOJOUn4Uz1I/AAAAAAAAHpk/DTBNCvjFcsw9CcCP7wB7kcNZDzExdEJ8ACLcB/s400/3DPCA-Merge.png" width="391" /></a></div>
+<br />
+<p>Awesome! Rotate the frame to check out the relationship of the data! But how do you use this for a presentation? Well one idea is to make a gif by rotating the image and saving it to make an image series. This great code chunk came from the <a href="http://www.genomearchitecture.com/2014/03/3d-animations-with-r">Filion Lab</a>:</p>
+<pre class="r"><code>dir.create(&quot;animation_merge&quot;)</code></pre>
+<pre class="r"><code>for (i in 1:360) {
+  view3d(userMatrix=rotationMatrix(2*pi * i/360, 0, 1, 0))
+  rgl.snapshot(filename=paste(&quot;animation_merge/frame-&quot;,
+                              sprintf(&quot;%03d&quot;, i), &quot;.png&quot;, sep=&quot;&quot;))}</code></pre>
+<p>I’ll leave it to you to decide how to convert the image sequence to an animated format. There’s lots of tools online. I use an image processing tool called <a href="https://fiji.sc/">Fiji</a>. File &gt; Import &gt; Image Sequence… Then… Image &gt; type &gt; 8-bit color… Then… File &gt;Save as &gt; Animated gif.</p>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-WHC0jDZHgtY/WOJProOXlKI/AAAAAAAAHps/g_2MkgJbB9Mq8JFOtwCsSwjUqbIRT3hCgCLcB/s1600/animation_merge-2.gif" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="https://1.bp.blogspot.com/-WHC0jDZHgtY/WOJProOXlKI/AAAAAAAAHps/g_2MkgJbB9Mq8JFOtwCsSwjUqbIRT3hCgCLcB/s1600/animation_merge-2.gif" /></a></div>
+<br />
+<p>Niiceee.</p>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.3 (2017-03-06)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: macOS Sierra 10.12.3
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] rgl_0.98.1
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.10    digest_0.6.12   rprojroot_1.2   mime_0.5       
+##  [5] R6_2.2.0        xtable_1.8-2    jsonlite_1.3    backports_1.0.5
+##  [9] magrittr_1.5    evaluate_0.10   stringi_1.1.3   rmarkdown_1.4  
+## [13] tools_3.3.3     stringr_1.2.0   htmlwidgets_0.8 shiny_1.0.1    
+## [17] httpuv_1.3.3    yaml_2.1.14     htmltools_0.3.5 knitr_1.15.1</code></pre>
+
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+<aside>
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i> <a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </aside>
+
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

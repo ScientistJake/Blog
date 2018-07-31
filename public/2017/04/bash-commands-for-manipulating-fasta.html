@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-04-03T21:13:14JST">2017-04-03</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/04/bash-commands-for-manipulating-fasta.html">Bash commands for manipulating fasta sequence files</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  Here's a collection of bash one liners to manipulate fasta files that I've found incredibly useful. Some by me, some found on various threads on <a href="http://biostars.org/">Biostars</a> and stackexchange.<br />
+<br />
+Just a reminder, a fasta file is a collection of sequence where each sequence identifier is preceded by a '&gt;' and a newline. Example:<br />
+<br />
+&gt;Sequence_1<br />
+ATGCGGCAGAGTCTAGT<br />
+&gt;Sequence_2<br />
+GTCTAGCTCGTCATGTA<br />
+<br />
+Count the number of sequences in a fasta:
+<pre><code>grep -c "^&gt;" file.fa
+</code></pre>
+Add something to the end of a fasta line. In this case, YOURID:
+
+<pre><code>sed 's/&gt;.*/&amp;YOURID/' file.fa &gt; output.fa
+</code></pre>
+
+Add an an ID with increasing integer to a fasta:
+
+<pre><code>awk '/^&gt;/ {$1=$1 " YOURID_" ++i}1' file.fa &gt; output.fa
+</code></pre>
+
+Remove everything in the header of a fasta after the first space:
+
+<pre><code>awk '{print $1;next}1' file.fa &gt; output.fa
+</code></pre>
+
+This does the same thing with sed:
+
+<pre><code>sed 's/\s.*$//' &lt; file.fa &gt; output.fa
+</code></pre>
+
+Remove everything after the second field of a fasta header (you could add as many fields as you like by adding  " " $3 " " $4 " " $5 etc):
+
+<pre><code>awk '/^&gt;/ {print $1 " " $2;next}1' file.fa &gt; output.fa
+</code></pre>
+
+Get a list of IDs from a fasta file:
+
+<pre><code>grep -o -E "^&gt;\w+" file.fa | tr -d "&gt;"
+</code></pre>
+
+Split a fasta into files containing X number of sequences. This splits a fasta into several files containing 1000 sequences each:
+
+<pre><code>awk 'BEGIN {n_seq=0;} /^&gt;/ {if(n_seq%1000==0){file=sprintf("output.split.%d.fa",n_seq);} print &gt;&gt; file; n_seq++; next;} { print &gt;&gt; file; }' &lt; file.fa
+</code></pre>
+
+Drop sequences shorter than X basepairs in a fasta (200 in the example below):
+
+<pre><code>awk '!/^&gt;/ { next } { getline seq } length(seq) &gt;= 200 { print $0 "\n" seq }' file.fa &gt; output.fa
+</code></pre>
+
+Convert multiline fasta to single line:
+
+<pre><code>sed ':a;N;/^&gt;/M!s/\n//;ta;P;D' &lt; file.fa &gt; output.fa
+</code></pre>
+
+Also with awk:
+
+<pre><code>awk '/^&gt;/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' &lt; file.fa &gt; output.fa
+</code></pre>
+
+Get the sequence of 'geneID' from a multi-fasta.
+<pre><code>awk '/'geneID'/{flag=1;print $0;next}/^>/{flag=0}flag' file.fasta >> output.fa
+</code></pre>
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

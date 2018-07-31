@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-04-20T21:13:14JST">2017-04-20</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/04/rin-value-how-low-is-too-low.html">RIN value: How low is too low?</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  Arguably the most important step in any RNA-seq study is RNA extraction. If you screw that up there is no study. Getting high quality RNA is key to obtaining good results. To that end it's extremely important during the extraction to:<br />
+</br><ol>
+<li>Work quickly (without making too many mistakes!)&nbsp;</li>
+<li>Work cleanly (RNAse zap is your friend)</li>
+</ol>
+</br>
+I'm not going to talk much about extraction methods today but rather RNA quality assessment using the <a href="http://www.genomics.agilent.com/en/Bioanalyzer-System/2100-Bioanalyzer-Instruments/?cid=AG-PT-106">Agilent Bioanalyzer.</a> The Bioanalyzer is basically an RNA gel on a chip. So in the output we see the different Ribosomal bands and depending on how 'smeary' those bands are we can estimate the level of sample degradation. The Bioanalyzer is pretty much the standard for RNA quality assessment for input into RNAseq and it provides an agonizingly simple metric for PIs and grad students to obsess over: The Ribosomal Integrity Number (RIN).<br />
+<br />
+<h2>
+The RIN value explained:</h2>
+The RIN is a tool developed by Agilent that aims to quantitatively and in a standardized way assess how degraded your sample is (1). It does this by calculating the intensity ratio of the ribosomal bands along with factoring in the presence of degradation products. First lets look at what degraded RNA on a gel looks like (<a href="https://www.agilent.com/cs/library/applications/5989-1165EN.pdf">image taken from Bioanalyzer manual</a>):<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-rZ4bfnDcHZk/WONnjqswKgI/AAAAAAAAHqQ/-Ixqa7rWjpEz9_LBNERC2IlyAEjQcWl5gCLcB/s1600/5989-1165EN_Page_2.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="282" src="https://2.bp.blogspot.com/-rZ4bfnDcHZk/WONnjqswKgI/AAAAAAAAHqQ/-Ixqa7rWjpEz9_LBNERC2IlyAEjQcWl5gCLcB/s320/5989-1165EN_Page_2.jpg" width="320" /></a></div>
+The samples are ordered from left to right in terms of degradation, in this case induced by incubation with an RNAse. On the left we see very clean RNA with prominent 28s, 18s and 5s fragments. As the samples are degraded towards the right, we see the gradual disappearance of the higher molecular weight bands and the appearance of fragmented RNA products. So basically the Bioanalyzer tries to parameterize this gel and assign it a RIN value. It does that by analyzing the intensity profile (<a href="https://www.agilent.com/cs/library/applications/5989-1165EN.pdf">image taken from Bioanalyzer manual</a>):<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-DUZwnSyJ1Po/WONozL_T0uI/AAAAAAAAHqc/3rz3b5akJR8ulT-5hWQa-ZDvqAWXJ9s9ACLcB/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B11.01.23.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="191" src="https://1.bp.blogspot.com/-DUZwnSyJ1Po/WONozL_T0uI/AAAAAAAAHqc/3rz3b5akJR8ulT-5hWQa-ZDvqAWXJ9s9ACLcB/s320/Screen%2BShot%2B2017-04-04%2Bat%2B11.01.23.png" width="320" /></a></div>
+<br />
+In general terms the RIN is related on the ratio of the area under the 28s and 18s fragments. It also takes into account the signal above baseline (green line above) in the inter-region and fast region since this is where the degradation products appear. Here's what example gels with different RINs look like (<a href="https://www.agilent.com/cs/library/usermanuals/Public/G2946-90004_Vespucci_UG_eBook_(NoSecPack).pdf">images taken from the long Bioanalyzer manual</a>):<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-5pDitUpsirQ/WONpwd1CAyI/AAAAAAAAHqs/hHROAlWYlPwMjJZS9NQlbr_XIp1UTuhrQCLcB/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B10.59.44.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="280" src="https://2.bp.blogspot.com/-5pDitUpsirQ/WONpwd1CAyI/AAAAAAAAHqs/hHROAlWYlPwMjJZS9NQlbr_XIp1UTuhrQCLcB/s320/Screen%2BShot%2B2017-04-04%2Bat%2B10.59.44.png" width="320" /></a></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-Wc5O5e5XMNo/WONpwfftRgI/AAAAAAAAHqw/s4cX4Nv0LbAn5slAQzASVn-522FqmaLxACLcB/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B10.59.55.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="278" src="https://2.bp.blogspot.com/-Wc5O5e5XMNo/WONpwfftRgI/AAAAAAAAHqw/s4cX4Nv0LbAn5slAQzASVn-522FqmaLxACLcB/s320/Screen%2BShot%2B2017-04-04%2Bat%2B10.59.55.png" width="320" /></a></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-lFUVdVJRmtM/WONpwehvhjI/AAAAAAAAHqo/txHLEhcj7UQ4MbNU0ypMi0F4yqQBxuJiQCLcB/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B11.00.04.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="140" src="https://4.bp.blogspot.com/-lFUVdVJRmtM/WONpwehvhjI/AAAAAAAAHqo/txHLEhcj7UQ4MbNU0ypMi0F4yqQBxuJiQCLcB/s320/Screen%2BShot%2B2017-04-04%2Bat%2B11.00.04.png" width="320" /></a></div>
+<br />
+You can see that in the high quality (9:10) RIN plots:<br />
+<ul>
+<li>The amplitude of the 28s peak is &gt;= the 18s.</li>
+<li>There is virtually no signal in the inter-region or fast region.</li>
+</ul>
+&nbsp;In the 'decent' (6:8) RIN plots:<br />
+<ul>
+<li>The 28s and 18s peaks start to get a 'shoulder' where degradation is evident.</li>
+<li>>Signal is notable in the lower molecular weight regions.</li>
+</ul>
+In the low quality (2:5) RIN plots:<br />
+<ul>
+<li>The 28s peak progressively disappears as degradation increases.</li>
+<li>There is a massive accumulation of short degradation products in the fast region/5s region.</li>
+</ul>
+<br />
+It's worth noting that the Bioanalyzer does make mistakes in RIN calling by inaccurately estimating the area of the 28s/18s signals, you can correct these manually<br />
+(<a href="https://www.agilent.com/cs/library/usermanuals/Public/G2946-90004_Vespucci_UG_eBook_%28NoSecPack%29.pdf">images taken from the long Bioanalyzer manual</a>):<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-eDVqqFN34bc/WONvfTxefRI/AAAAAAAAHrA/BSLUSSxXv3YZ0I5P1UJz_0b6dhavYSsGgCEw/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B11.01.54.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="255" src="https://2.bp.blogspot.com/-eDVqqFN34bc/WONvfTxefRI/AAAAAAAAHrA/BSLUSSxXv3YZ0I5P1UJz_0b6dhavYSsGgCEw/s400/Screen%2BShot%2B2017-04-04%2Bat%2B11.01.54.png" width="400" /></a></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-OmiJmMHNS-I/WONvnt75GMI/AAAAAAAAHrI/cwUpJ8dk0qQowdjDQNH14uJlThQ-qEYogCLcB/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B11.02.01.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="270" src="https://3.bp.blogspot.com/-OmiJmMHNS-I/WONvnt75GMI/AAAAAAAAHrI/cwUpJ8dk0qQowdjDQNH14uJlThQ-qEYogCLcB/s400/Screen%2BShot%2B2017-04-04%2Bat%2B11.02.01.png" width="400" /></a></div>
+<br />
+<h2>
+How does this affect an RNA-seq study?</h2>
+Well it turns out that RNA integrity has a pretty substantial effect on RNA-seq results. This is mostly attributed to the fact that degraded RNA yields reads that map to the reference at a lower rate, therefore reducing library complexity (1).<br />
+<br />
+This effect of RIN on RNA-seq results has been extensively tested by <a href="http://bmcbiol.biomedcentral.com/articles/10.1186/1741-7007-12-42#MOESM1">Romero et al.</a> (1). In that study, the authors allowed their samples to sit at room temp for 0,12, 24,48, and 84 hours. This obviously resulted in degradation in RIN values with mean RIN = 9.3 at 0&nbsp;hours and 3.8 at 84&nbsp;hours. Upon quantifying these samples using RNA-seq they found that RIN factored significantly in the ability to detect differentially expressed genes and introduced a large amount of inter-run variation. Consider their plot below:<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-kcU2QhfcVaw/WOOLSfmIFEI/AAAAAAAAHrg/GXmC4GG8H3wpLbiUjP1zLrgfL1RjaucigCLcB/s1600/Screen%2BShot%2B2017-04-04%2Bat%2B14.01.44.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="390" src="https://3.bp.blogspot.com/-kcU2QhfcVaw/WOOLSfmIFEI/AAAAAAAAHrg/GXmC4GG8H3wpLbiUjP1zLrgfL1RjaucigCLcB/s400/Screen%2BShot%2B2017-04-04%2Bat%2B14.01.44.png" width="400" /></a></div>
+<br />
+As you can see in the PCA, the majority of the variance (PC1) is strongly associated with RIN score (color) rather than individual (shape) suggesting <b>degradation introduces a large amount of variance in the RNAseq results.</b> This is contrary to some opinions that since RNA-seq produces short reads, the fragmented RNA is still good for sequencing. This might be true for QPCR and a gene by gene basis but not RNA-seq.<br />
+<br />
+Furthermore the authors found that <b>not all transcripts are degraded at the same rate</b>. So you can't just assume that there's simply a linearly reduced library size that will be corrected in normalization.<br />
+<br />
+<h2>
+What to do with degraded RNA?</h2>
+Sometimes there's nothing you can do to increase RNA integrity, especially if your collecting samples in the field. If that's the case, Romero et al. present a methodology to correct for low RIN by using it as a covariate in the statistical modeling (1). Another method to recover data from degraded samples was recently presented in a study by <a href="http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0091851">Sigurgeirsson et al.</a>(2). So there's hope!<br />
+<br />
+<h2>
+RIN: How low is too low?</h2>
+So by now you're probably annoyed that I haven't answered the title question of this post. This is because I actually think people put too much stock in the RIN. I routinely collect RNA from a non-model system whose RNA for whatever reason doesn't fit the expectations of the Bioanalyzer and produces critical errors (RIN= N/A). Additionally the Bioanalyzer is quite sensitive to the amount of RNA loaded into each well; too much RNA can bring up the base line and lower RIN scores. In these cases I compare my results to the charts above to manually estimate my RIN.<br />
+<br />
+But you and your PI want a number I'm sure. So assuming the Bioanalyzer has accurately called your RIN, my answer is <b>7.5</b>. This number is based on both accepted best practices and influenced by the studies cited in this post. Beyond this, the variance introduced by the degradation greatly influences the results.&nbsp; Do know however that there are methods to get useful data out of low quality RNA! So don't panic if you come back from the field and see sad RIN values.<br />
+<br />
+Good luck!<br />
+<br />
+<pre>1: Schroeder A, Mueller O, Stocker S, et al. The RIN: an RNA integrity number for
+assigning integrity values to RNA measurements. <i>BMC Molecular Biology</i>. 2006;7:3.
+doi:10.1186/1471-2199-7-3.</pre>
+<pre>2: Gallego Romero I, Pai AA, Tung J, Gilad Y. RNA-seq: impact of RNA degradation 
+on transcript quantification. BMC Biol. 2014 May 30;12:42. doi:
+10.1186/1741-7007-12-42. PubMed PMID: 24885439; PubMed Central PMCID: PMC4071332.</pre>
+
+<pre>3: Sigurgeirsson B, Emanuelsson O, Lundeberg J. Sequencing degraded RNA addressed
+by 3' tag counting. PLoS One. 2014 Mar 14;9(3):e91851. doi:
+10.1371/journal.pone.0091851. eCollection 2014. PubMed PMID: 24632678; PubMed
+Central PMCID: PMC3954844.
+&nbsp;</pre>
+<br />
+<br />
+<code><pre>
+sessionInfo()<br />
+Human version 1.1 (1984-11-15)<br />Brain (2-bit)<br />Running under: Coffee (SometimesBeer)<br /><br />locale:<br />[1] I_was_never_sure_what_this_meant<br /><br />attached base packages:<br />[1] writing&nbsp;&nbsp; thinking &nbsp;&nbsp; <br /><br />other attached packages:<br />[1] staring_blankly &nbsp; <br /><br />loaded via a namespace (and not attached):<br />&nbsp;[1] Beer &nbsp;&nbsp;&nbsp;&nbsp; homebrew &nbsp;&nbsp;&nbsp;&nbsp; coffee &nbsp;&nbsp; procrastination &nbsp;&nbsp; procrastinationV.2 why_am_I_here? &nbsp;&nbsp; <br /><br />
+
+</pre></code>
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

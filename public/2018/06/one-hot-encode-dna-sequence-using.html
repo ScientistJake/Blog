@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-111736277-3');
+</script>
+
+    <meta charset="utf-8">
+<meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+<link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2018-06-01T21:13:14JST">2018-06-01</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2018/06/one-hot-encode-dna-sequence-using.html">One hot encode a DNA sequence using python and scikit learn</a></h2>
+  </header>
+
+<div class="article-body">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-UMVoHKrd5uU/WxEeTtX4SxI/AAAAAAAANbA/74H_tsmCAOcCpdIeeJcV4OndvE8qa_QkQCLcBGAs/s1600/XGlbR20.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="480" data-original-width="800" height="192" src="https://3.bp.blogspot.com/-UMVoHKrd5uU/WxEeTtX4SxI/AAAAAAAANbA/74H_tsmCAOcCpdIeeJcV4OndvE8qa_QkQCLcBGAs/s320/XGlbR20.png" width="320" /></a></div>
+<br />
+Machine learning (in the informatics world) is like teenage sex:
+ everyone talks about it, nobody really knows how to to do it, 
+ everyone thinks everyone else is doing it, so everyone claims they are too. 
+ 
+ Juvenile comparisons aside, the power of these tools can't be ignored. What really piqued 
+ my interest was reading <a href="https://www.blogger.com/null" src="https://medium.com/@ageitgey/machine-learning-is-fun-part-2-a26a10b68df3">Adam Geitgy's post</a>
+  on Medium where he builds a Super Mario level using a neural network. 
+  His entire <a href="https://www.blogger.com/null" src="https://medium.com/@ageitgey/machine-learning-is-fun-80ea3ec3c471">eight part series</a>
+   by the way, is an awesome primer on machine learning. More recently I read a <a href="https://www.blogger.com/null" src="https://www.ncbi.nlm.nih.gov/pubmed/29617928">recent paper by Wang et al.</a>
+ that applied deep learning to transcription factor binding and I was inspired to learn more.
+ 
+Using deep learning tools for DNA analysis requires first converting DNA sequences to numbers.
+We can do this by one hot encoding our DNA sequence.
+<br /><br />
+<h3>
+One Hot Encoding and DNA sequences:</h3><br />
+One hot encoding is a way to represent categorical data as binary vectors. 
+
+For DNA, we have four catagories <b>A, T, G,</b> and<b> C</b>
+<br /><br />
+Thus a one hot code for DNA could be:
+<br />
+<code>
+A = [1, 0, 0, 0]<br />
+T = [0, 1, 0, 0]<br />
+G = [0, 0, 1, 0]<br />
+C = [0, 0, 0, 1]<br /><br />
+</code>
+So the sequence AATTC would be:<br />
+<code>
+[[1, 0, 0, 0],<br />
+ [1, 0, 0, 0],<br />
+ [0, 1, 0, 0],<br />
+ [0, 1, 0, 0],<br />
+ [0, 0, 0, 1]]<br />
+</code>
+<br />
+You might be asking<b> 'why not just use A=1, T=2, G=3, C=4?'</b><br />
+The answer is of course we can, this is called <b>integer encoding</b> 
+and we need this for our encoding solution below.<br /><br />
+
+To do this in python, I found a <a href="https://www.blogger.com/null" src="https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/">great one hot encoding tutorial</a> by Jason Brownlee that takes advantage of the <a href="https://www.blogger.com/null" src="http://scikit-learn.org/stable/index.html">SciKit Learn</a> library and adapted it to work with DNA sequences.
+Note that the SciKit learn library is pre-installed with the <a href="https://www.blogger.com/null" src="https://www.anaconda.com/download/#macos">Anaconda</a> distribution.
+It made the most sense to me to build this as a python class to use repeatedly for many sequences and storing their attributes for later use.
+the class <code>hot_dna</code> takes a fasta as argument. 
+The first chunk will check for and store the sequence name (anything between '&gt;' and newline).
+Then the sequence is converted to an array for integer encoding. The integer encoding is carried out using <code>LabelEncoder()</code>.
+Next, the integer encoded DNA is one hot encoded using <code>OneHotEncoder()</code>.
+Finally, these encodings and the original sequence along with it's name get loaded as attributes.
+Check it out below:
+<pre><code class="python">
+from numpy import array
+from numpy import argmax
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+import re
+
+class hot_dna:
+ def __init__(self,fasta):
+   
+  #check for and grab sequence name
+  if re.search("&gt;",fasta):
+   name = re.split("\n",fasta)[0]
+   sequence = re.split("\n",fasta)[1]
+  else :
+   name = 'unknown_sequence'
+   sequence = fasta
+  
+  #get sequence into an array
+  seq_array = array(list(sequence))
+    
+  #integer encode the sequence
+  label_encoder = LabelEncoder()
+  integer_encoded_seq = label_encoder.fit_transform(seq_array)
+    
+  #one hot the sequence
+  onehot_encoder = OneHotEncoder(sparse=False)
+  #reshape because that's what OneHotEncoder likes
+  integer_encoded_seq = integer_encoded_seq.reshape(len(integer_encoded_seq), 1)
+  onehot_encoded_seq = onehot_encoder.fit_transform(integer_encoded_seq)
+  
+  #add the attributes to self 
+  self.name = name
+  self.sequence = fasta
+  self.integer = integer_encoded_seq
+  self.onehot = onehot_encoded_seq
+</code></pre>
+And here's what a fasta looks like going through:
+<code></code><br />
+<pre><code>  
+# EXAMPLE
+fasta = "&gt;fake_sequence\nATGTGTCGTAGTCGTACG"
+my_hottie = hot_dna(fasta)
+
+print(my_hottie.name)
+&gt;fake_sequence
+print(my_hottie.sequence)
+ATGTGTCGTAGTCGTACG
+print(my_hottie.integer)
+[[0]
+ [3]
+ [2]
+ [3]
+ [2]
+ [3]
+ [1]
+ [2]
+ [3]
+ [0]
+ [2]
+ [3]
+ [1]
+ [2]
+ [3]
+ [0]
+ [1]
+ [2]]
+print(my_hottie.onehot)
+[[ 1.  0.  0.  0.]
+ [ 0.  0.  0.  1.]
+ [ 0.  0.  1.  0.]
+ [ 0.  0.  0.  1.]
+ [ 0.  0.  1.  0.]
+ [ 0.  0.  0.  1.]
+ [ 0.  1.  0.  0.]
+ [ 0.  0.  1.  0.]
+ [ 0.  0.  0.  1.]
+ [ 1.  0.  0.  0.]
+ [ 0.  0.  1.  0.]
+ [ 0.  0.  0.  1.]
+ [ 0.  1.  0.  0.]
+ [ 0.  0.  1.  0.]
+ [ 0.  0.  0.  1.]
+ [ 1.  0.  0.  0.]
+ [ 0.  1.  0.  0.]
+ [ 0.  0.  1.  0.]]
+</code></pre>
+<br />
+All set for your machine learning algorithms! Which may or may not be the topic of a future post.
+<br />
+<code></code><br />
+<pre><code>LearnMeSomeBiology(my_hottie.onehot)
+</code></pre>
+<br />
+<br />
+Until next time!
+
+</div>
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

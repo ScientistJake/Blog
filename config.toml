@@ -1,0 +1,4 @@
+theme = "hugo_theme_beg"
+baseURL = "http://2-BitBio.com/"
+languageCode = "en-us"
+title = "2-BitBio"

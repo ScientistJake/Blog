@@ -1,0 +1,12 @@
+---
+title: "Next Post"
+author: "Jake Warner"
+date: 2015-07-23T21:13:14-05:00
+categories: ["BioInformatics"]
+tags: ["R", "RNAseq", "clustering"]
+---
+Hello world. Just migrated from blogger to hugo and seeing how it goes.
+
+```{r session}
+sessionInfo()
+```

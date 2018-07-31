@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-04-04T21:13:14JST">2017-04-04</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/04/clustering-rnaseq-data-making-heatmaps.html">Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+<p>Note: this is part one of a series on clustering RNAseq data. Check out <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two on K-means clustering here</a> and <a href="/2018/7/clustering-rnaseq-data-using-fuzzy-c.html">part three on fuzzy c-means clustering here</a>.</p>
+</br>
+<ol style="list-style-type: decimal;">
+<li>Using hierarchical clustering to cluster genes and samples.</li>
+<li>Making heatmaps.</li>
+<li>Cutting dendrograms to identify gene clusters.</li>
+<li>Associating clusters with external traits.</li>
+</ol>
+</br>
+So let’s say we’ve performed an RNA-seq experiment. The sequencing went swimmingly and the normalization/ quantification with edgeR or DEseq is finished. Now what do we do with all of this data? I say cluster. And cluster we shall.<br />
+
+</br>Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing.<br />
+
+</br>This is all a little abstract so let’s learn by doing. First we need to pull down some data to play with. The following will get us some mouse time-series data and take just the first 1000 genes as an example:<br />
+
+<pre class="r"><code>mydat &lt;- read.table(url("http://bowtie-bio.sourceforge.net/recount/countTables/trapnell_count_table.txt"), sep="\t", header =T, row.names = 1)
+#drop genes with low counts and take the first 1000.
+mydat &lt;- mydat[rowSums(mydat &gt; 1) &gt;=4,]
+mydat &lt;- mydat[1:1000,]
+y &lt;- as.matrix((mydat)) </code></pre>
+Since this is RNAseq data, we should perform a quick normalization. We can do this using <a href="https://bioconductor.org/packages/release/bioc/html/edgeR.html">edgeR.</a> If you don’t have edgeR installed you can continue with the y object and skip the next few lines.<br />
+
+<pre class="r"><code>library(edgeR)
+y &lt;- DGEList(counts = y, group=c(1,2,3,4))
+y &lt;- calcNormFactors(y)
+z &lt;- cpm(y, normalized.lib.size=TRUE) </code></pre>
+Next, we scale the data and construct the trees (dendrograms). Since we are comparing gene expression patterns we need to scale the data otherwise all of the highly expressed genes will cluster together even if they have different patterns among the samples. After that we calculate the ‘distance’ between genes and samples as 1 minus the correlation of one gene/sample to another. You can think of this distance as how differently one gene behaves compared to another. This distance is used by hclust() to construct the dendrograms for the genes and samples<br />
+
+<pre class="r"><code>
+scaledata <- t(scale(t(z))) # Centers and scales data.
+scaledata <- scaledata[complete.cases(scaledata),]
+
+hr <- hclust(as.dist(1-cor(t(scaledata), method="pearson")), method="complete") # Cluster rows by Pearson correlation.
+hc <- hclust(as.dist(1-cor(scaledata, method="spearman")), method="complete") # Clusters columns by Spearman correlation.
+</code></pre>
+
+
+Now we’re ready to generate a heatmap of the data. I like heatmap.2 in the gplots package, but you can pass the same call below to the base function heatmap() if you like:<br />
+
+<pre class="r"><code>library(gplots)
+heatmap.2(z,
+          Rowv=as.dendrogram(hr), 
+          Colv=as.dendrogram(hc),
+          col=redgreen(100),
+          scale="row",
+          margins = c(7, 7),
+          cexCol = 0.7,
+          labRow = F,
+          main = "Heatmap.2",
+          trace = "none")</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-1LuZzv5972s/WOIcF_Sn7eI/AAAAAAAAHoU/-Ey_5D-J7pMt8dPwoghg0pP_-jxs3l0DwCLcB/s1600/Rplot01.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://3.bp.blogspot.com/-1LuZzv5972s/WOIcF_Sn7eI/AAAAAAAAHoU/-Ey_5D-J7pMt8dPwoghg0pP_-jxs3l0DwCLcB/s400/Rplot01.png" width="400" /></a></div>
+Starting to look pretty sharp! Our eyes already start to pull out the groups of genes that cluster together. For example we can easily see a large groups of genes down-regulated in sample 94 and upregulated in 97 as well as another group that up in 94 and down in 95, 96, and 97. Speaking of samples, this plot also allows us to see how our samples group together. This is important to see if say all of an experiments replicates cluster together.<br />
+
+</br>I often cluster just my samples to check for outliers like so:<br />
+
+<pre class="r"><code>TreeC = as.dendrogram(hc, method="average")
+plot(TreeC,
+     main = "Sample Clustering",
+     ylab = "Height")</code></pre>
+<a href="https://2.bp.blogspot.com/-EP50NZwJHfo/WOIcF3yxcaI/AAAAAAAAHoY/V8grUGK5bZgRm8wv3vrrIay3TaJPDPBEwCEw/s1600/Rplot.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="273" src="https://2.bp.blogspot.com/-EP50NZwJHfo/WOIcF3yxcaI/AAAAAAAAHoY/V8grUGK5bZgRm8wv3vrrIay3TaJPDPBEwCEw/s320/Rplot.png" width="320" /></a>
+
+<pre class="r"><code>TreeR = as.dendrogram(hr, method="average")
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-cBL4QK7-gW8/WOIcF1k6A6I/AAAAAAAAHoQ/1factfDvqpUUvKZt8iIOTvphSHRyafbuACEw/s1600/Rplot02.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://3.bp.blogspot.com/-cBL4QK7-gW8/WOIcF1k6A6I/AAAAAAAAHoQ/1factfDvqpUUvKZt8iIOTvphSHRyafbuACEw/s400/Rplot02.png" width="400" /></a></div>
+We can see how hierarchical clustering groups the genes by co-expression. We can use that information to see the similarity of two genes as they change across samples. We can also extract discrete clusters of genes as a means to identify co-expression modules. This is done by cutting the tree at a specified height and the resulting branches will make a cluster. We can cut the tree high to obtain a small number of large clusters or lower to obtain many small clusters. Let’s try a few different cut heights: 1.5, 1.0 and 5.0:<br />
+
+<pre class="r"><code>hclusth1.5 = cutree(hr, h=1.5) #cut tree at height of 1.5
+hclusth1.0 = cutree(hr, h=1.0) #cut tree at height of 1.0
+hclusth0.5 = cutree(hr, h=0.5) #cut tree at height of 0.5</code></pre>
+cutree() outputs a vector of cluster assignments. These will come in handy for downstream analyses.<br />
+
+<pre class="r"><code>head(hclusth1.5)</code></pre>
+<pre><code>## ENSMUSG00000000001 ENSMUSG00000000028 ENSMUSG00000000056 
+##                  1                  2                  3 
+## ENSMUSG00000000058 ENSMUSG00000000078 ENSMUSG00000000088 
+##                  4                  1                  3</code></pre>
+Now, using the dendextend package we can visualize the cluster assignments as a color bar below the dendrogram. There’s also a lot of other cool ways to use this package like coloring the leaves. It’s worthwhile to check out their <a href="https://cran.r-project.org/web/packages/dendextend/vignettes/introduction.html">documentation</a>.<br />
+
+<pre class="r"><code>library(dendextend)
+#plot the tree
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+
+#add the three cluster vectors
+the_bars &lt;- cbind(hclusth0.5, hclusth1.0, hclusth1.5)
+#this makes the bar
+colored_bars(the_bars, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c("h=0.5","h=1.0","h=1.5"),cex.rowLabels=0.7)
+#this will add lines showing the cut heights
+abline(h=1.5, lty = 2, col="grey")
+abline(h=1.0, lty = 2, col="grey")
+abline(h=0.5, lty = 2, col="grey")</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-U0PsA5kxt-Q/WOIdiQJjj8I/AAAAAAAAHo8/pfneEYiicMcf-lV9EDl6O_diBLhWtSUrACLcB/s1600/Rplot09.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://1.bp.blogspot.com/-U0PsA5kxt-Q/WOIdiQJjj8I/AAAAAAAAHo8/pfneEYiicMcf-lV9EDl6O_diBLhWtSUrACLcB/s400/Rplot09.png" width="400" /></a></div>
+Pretty neat! We see how cutting the tree at different heights yields different clusters. Alternatively, we can designate the number of clusters we want by using the ‘k’ option in cutree().<br />
+
+</br>Here I’m asking for four (k=4):<br />
+
+<pre class="r"><code>hclustk4 = cutree(hr, k=4)
+plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+colored_bars(hclustk4, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c("k=4"),cex.rowLabels=0.7)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-xgkBSQ0rgr0/WOIcGVAfNaI/AAAAAAAAHo0/f1Fi7lJ-vYgNc6uhtwOTtwrKbZM2pcLaACEw/s1600/Rplot04.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://1.bp.blogspot.com/-xgkBSQ0rgr0/WOIcGVAfNaI/AAAAAAAAHo0/f1Fi7lJ-vYgNc6uhtwOTtwrKbZM2pcLaACEw/s400/Rplot04.png" width="400" /></a></div>
+There’s another method of tree cutting worth mentioning: Dynamic tree cutting (1). Above, we cut the tree using a fixed height. This is a simple and intuitive method but is not optimal for large datasets with complicated dendrograms. Additionally when using fixed height cutting we lose sub clusters since they may fall below the cut threshold. To address these issues, Peter Langfelder, Bin Zhang and Steve Horvath developed dynamic tree cutting. Dynamic tree cutting takes into account the shape of the branches when cutting the tree, so rather than cutting the entire dendrogram at a fixed height each branch is adaptively trimmed. There are two main implementations, a top down approach using only the dendrogram (tree) and a bottom up approach (hybrid) which detects outlying members of a cluster. You can read much more <a href="https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/BranchCutting/">here</a>. In this case we will use the ‘hybrid’ method:<br />
+
+<pre class="r"><code>library(dynamicTreeCut)
+clusDyn &lt;- cutreeDynamic(hr, distM = as.matrix(as.dist(1-cor(t(scaledata)))), method = "hybrid")</code></pre>
+<pre><code>##  ..cutHeight not given, setting it to 1.98  ===&gt;  99% of the (truncated) height range in dendro.
+##  ..done.</code></pre>
+<pre class="r"><code>plot(TreeR,
+     leaflab = "none",
+     main = "Gene Clustering",
+     ylab = "Height")
+
+colored_bars(clusDyn, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c("Dynamic"),cex.rowLabels=0.7)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-9FwxvXgADYU/WOIcGTMYbDI/AAAAAAAAHo0/UbU5HcW3afkc-V5GOJTDebySsAXdqZMLwCEw/s1600/Rplot05.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://2.bp.blogspot.com/-9FwxvXgADYU/WOIcGTMYbDI/AAAAAAAAHo0/UbU5HcW3afkc-V5GOJTDebySsAXdqZMLwCEw/s400/Rplot05.png" width="400" /></a></div>
+Whatever the method, once we have clusters we are happy with is where the real analysis begins! At this point we could:<br />
+
+</br><ol style="list-style-type: decimal;">
+<li>Test for gene-ontology enrichment by cluster.</li>
+<li>Plot cluster expression as function of the samples.</li>
+<li>Correlate clusters to external traits.</li>
+</ol>
+</br>Here we will do the latter two. First we need some trait data:<br />
+
+<pre class="r"><code>traits &lt;- read.table(url("http://bowtie-bio.sourceforge.net/recount/phenotypeTables/trapnell_phenodata.txt"), sep="", header =T, row.names = 1)
+ 
+#since the cell line and strain are the same we remove them
+traits&lt;- traits[-c(2:3)]</code></pre>
+To calculate the cores (aka medoids) of each cluster we can use this function by Biostar user <a href="https://www.biostars.org/u/55/">Michael Dundrop</a>. Here I’m using a cutheight of 1.5 to have a smaller number of large clusters.<br />
+
+<pre class="r"><code>clust.core = function(i, dat, clusters) {
+  ind = (clusters == i)
+  colMeans(dat[ind,])
+}
+
+clusters &lt;- hclusth1.5
+cores &lt;- sapply(unique(clusters), clust.core, scaledata, clusters)</code></pre>
+Now we can plot the cores as a function of the samples. Since this is time series data, we use the time.point.hrs trait to plot the samples.<br />
+
+<pre class="r"><code>library(ggplot2)
+library(reshape2)
+#make a dataframe of cores by time
+d &lt;- data.frame(cbind(traits$time.point.hrs,cores))
+colnames(d) &lt;-c("time", paste0("clust_",1:ncol(cores)))
+
+#get the data frame into long format for plotting
+dmolten &lt;- melt(d, id.vars = "time")
+#order by time
+dmolten &lt;- dmolten[order(dmolten$time),]
+
+# make the plot
+p1 &lt;- ggplot(dmolten, aes(time,value, col=variable)) + 
+  geom_point() + 
+  geom_line() +
+  scale_x_continuous(minor_breaks = NULL, breaks=c(as.numeric(levels(factor(dmolten$time))))) +
+  xlab("Time") +
+  ylab("Expression") +
+  labs(title= "Cluster Core Expression by Time",color = "Cluster")
+p1</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-iJMMuhmp_wU/WOIcGob0wbI/AAAAAAAAHo0/BOG9hu2uI58xmIlodGcZEtVLhLfN6Bi0gCEw/s1600/Rplot06.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://1.bp.blogspot.com/-iJMMuhmp_wU/WOIcGob0wbI/AAAAAAAAHo0/BOG9hu2uI58xmIlodGcZEtVLhLfN6Bi0gCEw/s400/Rplot06.png" width="400" /></a></div>
+We can see that each cluster shows a fairly distinct shape with respect to time. Too many modules and we might see some clusters with redundant profiles meaning they are similar (perhaps the tree was cut too low).<br />
+
+</br>Now let’s extract just module 1 and plot all of those entries with the core overlaying to visualize the module as a whole.<br />
+
+<pre class="r"><code>#subset the complete data by cluster =1
+dClust1 &lt;- t(scaledata[hclusth1.5==1,])
+#add the time
+dClust1 &lt;- data.frame(cbind(traits$time.point.hrs,dClust1))
+colnames(dClust1)[1] &lt;- "time"
+
+#get the data frame into long format for plotting
+dClust1molten &lt;- melt(dClust1, id.vars = "time")
+#order by time
+dClust1molten &lt;- dClust1molten[order(dClust1molten$time),]
+
+#Subset the cores molten dataframe so we can plot core1
+core1 &lt;- dmolten[dmolten$variable=="clust_1",]
+
+# Call ggplot, now we use the group=variable and change the geom_line to grey
+# Then we add on top of that the core in blue.
+# to do that we pass the core data to geom_line
+
+p2 &lt;- ggplot(dClust1molten, aes(time,value, group=variable)) + 
+  geom_line(color="grey") +
+  geom_point(data=core1, aes(time,value), color="blue") + 
+  geom_line(data=core1, aes(time,value), color="blue") +
+  scale_x_continuous(minor_breaks = NULL, breaks=c(as.numeric(levels(factor(dmolten$time))))) +
+  xlab("Time") +
+  ylab("Expression") +
+  labs(title= "Cluster 1 Expression by Time",color = "Cluster")
+p2</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-bZILpbiTamE/WOIcGlZKc9I/AAAAAAAAHo0/NodV23T8U-g_j46A-oFeWiRB0GcyzvBWQCEw/s1600/Rplot07.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="341" src="https://2.bp.blogspot.com/-bZILpbiTamE/WOIcGlZKc9I/AAAAAAAAHo0/NodV23T8U-g_j46A-oFeWiRB0GcyzvBWQCEw/s400/Rplot07.png" width="400" /></a></div>
+It appears that all of the genes contained in cluster 1 decrease in expression over time (but we already knew that from plotting the cores). What this plot does tell us is how ‘tight’ this cluster is. We can see that for the most part, the genes assigned to cluster 1 follow the core. There are a few genes however who’s expression increases between 60 and 120 hours. Since I cut the tree rather high, I potentially regrouped genes that don’t ‘fit’ very well within the clusters. As a remedy to this problem I would consider cutting the tree lower or using dynamic tree cutting.<br />
+
+</br>To wrap up this tutorial, we will correlate the clusters with external traits. The traits can be anything we have data on: eg. disease, treatment, time, cell-line etc. In our case our only usable traits are time and replicate number so we will just use those. Also rather than using just ‘overall time’ as a trait I will split these observations up to see how each cluster associates with each timepoint. This workflow is adapted from the <a href="https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/Tutorials/">WGCNA tutorial</a> (2).<br />
+
+<pre class="r"><code>#here I'm adding vectors of time traits to the dataframe
+traits$'time:-24' &lt;- c(0,0,0,1)
+traits$'time:60' &lt;- c(0,0,1,0)
+traits$'time:120' &lt;- c(1,0,0,0)
+traits$'time:168' &lt;- c(0,1,0,0)
+
+#correlate the cores to traits:
+moduleTraitCor = cor(cores, traits, use= "p")
+#Extract the gene/sample numbers
+nGenes = nrow(mydat)
+nSamples = ncol(mydat)
+
+#p value calculation from WGCNA
+corPvalueStudent = function(cor, nSamples) {
+  T=sqrt(nSamples-2) * cor/sqrt(1-cor^2)
+  2*pt(abs(T),nSamples-2, lower.tail = FALSE)
+}
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
+
+#generate a text matrix of the correlation and pvalue
+textMatrix= paste(signif(moduleTraitCor, 2), "\n(",
+                  signif(moduleTraitPvalue, 1), ")", sep= "")
+dim(textMatrix)= dim(moduleTraitCor)</code></pre>
+It would also be wise to output the textmatrix to a file so we have the correlation and pvalues to refer to later.<br />
+
+</br>With all of this we can generate a heatmap to visualize the correlations.<br />
+
+<pre class="r"><code>#plot a heatmap of the clusters by trait overlaying the corr/pvalue
+par(oma=c(1,0,1,1))
+heatmap.2(moduleTraitCor,
+          dendrogram = "none",
+          Colv =FALSE,
+          scale = c("none"),
+          col="heat.colors",
+          na.rm=TRUE,
+          cellnote = textMatrix,
+          notecol="grey30",
+          notecex=0.6,
+          trace=c("none"),
+          cexRow = 0.8,
+          cexCol = 0.8,
+          main = "Cluster-Trait Correlation",
+          xlab = "Traits",
+          ylab = "Clusters")</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-QWGREJjIGHo/WOIcG_xcx-I/AAAAAAAAHo0/UGkASg51dPsnOIDNJP5BLIJuT1zJz9I_ACEw/s1600/Rplot08.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="https://1.bp.blogspot.com/-QWGREJjIGHo/WOIcG_xcx-I/AAAAAAAAHo0/UGkASg51dPsnOIDNJP5BLIJuT1zJz9I_ACEw/s1600/Rplot08.png" /></a></div>
+Similar to the line plot above, we can see how the different modules correlate to time points. Looking at cluster 1 again we can see it is negatively correlated to time overall. We can also identify clusters that significantly correlate to a specific timepoint. Cluster 2 for example has a very high correlation to t=-24 with a low p-value associated meaning this correlation is significant. Conversely cluster 7 is strongly associated with t=168 and could represent genes that are activated late in this time series.<br />
+
+</br>The best way to apply this method to your data is to try several different methods of tree cutting and see how they compare. If you notice that cutting the tree high gives modules that are heterogenous in expression pattern that you might consider cutting lower. On the contrary if you notice that cutting lower gives expression profiles that are too redundant you might want to regroup those clusters by cutting higher. Finally you can compare tree cutting with other methods of clustering like centroid based clustering (k-means) and see how they hold up. More on that in that later when i continue this series on clustering!<br />
+
+</br>Hope you found this little tutorial helpful! Happy data mining!<br />
+
+</br>Refs: 
+
+<pre><code>
+1. Langfelder P, Zhang B, Horvath S (2007) Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R. Bioinformatics 2008 24(5):719-720<br />
+2. Langfelder P, Horvath S (2008) WGCNA: an R package for weighted correlation network analysis. BMC Bioinformatics 2008, 9:559 PMID: 19114008 PMCID: PMC2631488
+</code></pre>
+
+<h3>Session</h3>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.3 (2017-03-06)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: macOS Sierra 10.12.3
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] reshape2_1.4.2        ggplot2_2.2.1         dynamicTreeCut_1.63-1
+## [4] dendextend_1.5.2      gplots_3.0.1         
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.10       DEoptimR_1.0-8     plyr_1.8.4        
+##  [4] viridis_0.3.4      class_7.3-14       bitops_1.0-6      
+##  [7] tools_3.3.3        prabclus_2.2-6     digest_0.6.12     
+## [10] mclust_5.2.3       evaluate_0.10      tibble_1.2        
+## [13] gtable_0.2.0       lattice_0.20-35    yaml_2.1.14       
+## [16] mvtnorm_1.0-6      gridExtra_2.2.1    trimcluster_0.1-2 
+## [19] stringr_1.2.0      knitr_1.15.1       cluster_2.0.6     
+## [22] gtools_3.5.0       caTools_1.17.1     fpc_2.1-10        
+## [25] diptest_0.75-7     stats4_3.3.3       rprojroot_1.2     
+## [28] grid_3.3.3         nnet_7.3-12        robustbase_0.92-7 
+## [31] flexmix_2.3-13     rmarkdown_1.4      gdata_2.17.0      
+## [34] kernlab_0.9-25     magrittr_1.5       whisker_0.3-2     
+## [37] backports_1.0.5    scales_0.4.1       htmltools_0.3.5   
+## [40] modeltools_0.2-21  MASS_7.3-45        assertthat_0.1    
+## [43] colorspace_1.3-2   labeling_0.3       KernSmooth_2.23-15
+## [46] stringi_1.1.3      lazyeval_0.2.0     munsell_0.4.3</code></pre>
+
+  </div>
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+    <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

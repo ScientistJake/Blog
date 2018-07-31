@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-111736277-3');
+</script>
+
+    <meta charset="utf-8">
+<meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+<link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+      <style>
+  .plotContainer{
+    padding-top: 10px;
+    padding-right: 30px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    height: 35vh;
+    width: 35vw;
+  }
+  .clickTableContainer{
+    padding-top: 15px;
+    padding-right: 30px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    font-family: "Monospace";
+    font-size: 14;
+  }
+  </style>
+    
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2018-01-30T21:13:14JST">2018-01-30</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2018/01/making-interactive-plots-using.html">Making interactive plots using javascript and D3 (v4)</a></h2>
+  </header>
+
+  
+<div class='article-body'>
+<p>There comes a time in every scientist's career when it's time to leave behind the excel chart tools.
+There are many options spanning a broad range of difficulty and customisability. 
+Check out <a href = "https://source.opennews.org/articles/what-i-learned-recreating-one-chart-using-24-tools/">this post on Source</a> for a good breakdown of the available programs and libraries. 
+Personally, I am a huge fan of the R library <a href="http://ggplot2.org/">ggplot2</a> because of it's flexibility and many add ons including my favorite, the <a href="http://www.2-bitbio.com/2017/12/xkcd-plots.html">XKCD add on. </a>
+Lately though I've been working on some data visualisation projects and needed to generate plots on the fly for display in a website.
+</br></br>
+Enter: <a href="https://d3js.org/">D3.js</a> and it's offspring <a href="https://plot.ly/">plotly.js</a>.
+</br></br>
+D3 is a javascript library that takes input data and uses it draw, edit and render elements of a website. 
+The results are stunning data visualisations built right into the html itself.
+Plotly, is a plotting library built on top of D3 and is basically a series of wrappers to make the most common chart types.
+</br></br>
+So why use plotly when we can go straight to the D3 source? Because D3 is difficult. Especially if you aren't completely comfortable in a js/html/css environment.
+</br></br>
+Then why use D3 when plotly can do (mostly) what we need? Because with D3 the possibilities are virtually endless. If you can dream it, D3 can probably make it. 
+</br></br>
+<a href="http://www.fpvis.org/FP.html">Want to have a customised interactive plot?</a> D3.
+</br>
+<a href="https://bl.ocks.org/mbostock/4062045">Want to make an interactive network diagram?</a> D3.
+</br>
+<a href="http://bl.ocks.org/tjdecke/5558084">How about a heatmap?</a> D3.
+</br>
+<a href="#poop">Maybe you fancy a scatter plot with poop emojis?</a>
+</br>
+You get the idea...
+</br></br>
+So let's give it a try. Below we'll make a simple scatter - line plot using D3 and add some interactivity. 
+</br><a href="#code">CLICK HERE to skip the tutorial and jump to the full code.</a> 
+</br></br>Here's what we're making:
+</p>
+   <div id='D3Div' class='plotContainer D3Plot'><!-- D3 chart will appear here! --></div>
+   <div id='clickTable' class='clickTableContainer'><!-- Clicked points will appear here! --></div>
+<p>
+The plot is a basic line and scatter plot. Note the nifty hover labels and clickable points! Let's go through the code used to make it. First we need to make a simple web layout. Here I'm making a basic html page with two divs, one for the plot with the class D3Div, and one which will display some data with the id `clickTable`:
+</p>
+<h3>Document Setup</h3>
+<pre><code class="html">
+&lt;html&gt; <br/>  &lt;head&gt;<br/>  &lt;style&gt;<br/>  .D3Div{<br/>    padding-top: 50px;<br/>    padding-right: 30px;<br/>    padding-bottom: 50px;<br/>    padding-left: 10px;<br/>    height: 50vh;<br/>    width:50vw;<br/>  }<br/>  .clickTableContainer{<br/>    padding-top: 50px;<br/>    padding-right: 30px;<br/>    padding-bottom: 50px;<br/>    padding-left: 10px;<br/>  }<br/>  &lt;/style&gt;<br/>  &lt;/head&gt;<br/>  &lt;body&gt;<br/>   &lt;h1&gt;D3 Scatter - Line Chart&lt;/h1&gt;<br/>   &lt;div id='container' class='D3Div'&gt;&lt;!-- D3 chart will appear here! --&gt;&lt;/div&gt;<br/>   &lt;div id='clickTable'&gt;&lt;!-- Clicked points will appear here! --&gt;&lt;/div&gt;<br/>  &lt;/body&gt;<br/>&lt;/html&gt;
+</code></pre>
+<p> Now we are ready to write our javascript. We have some dependencies to load: First is the D3 library (we're using version 4 which has a different syntax from v3) and its dependency jquery. We also will use the tool tip tipsy for hover labels.
+
+<pre><code>
+  &lt;!-- D3 --&gt;<br/>  &lt;script src=&quot;js/d3.v4.min.js&quot;&gt;&lt;/script&gt;<br/>  &lt;!-- D3 requires jquery--&gt;<br/>  &lt;script src=&quot;js/jquery.min.2.1.3.js&quot;&gt;&lt;/script&gt;<br/>  &lt;!-- Tipsy will make the hover label--&gt;<br/>  &lt;script type=&quot;text/javascript&quot; src=&quot;js/jquery.tipsy.js&quot;&gt;&lt;/script&gt;<br/>  &lt;link href=&quot;css/tipsy.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+</pre></code>
+<h3>Data and D3 basics</h3>
+<p>First we need some data. Here's an array of RNAseq data for a time series:</p>
+<pre><code class="javascript">
+    var dataset = [<br/>      [ 13.88, -1 ],<br/>      [ 8.28, 0 ],<br/>      [ 45.29, 2 ],<br/>      [ 25.71, 4 ],<br/>      [ 24.13, 8 ],<br/>      [ 101.49, 12 ],<br/>      [ 155.75, 16 ],<br/>      [ 142.93, 20 ],<br/>      [ 100.38, 24 ],<br/>      [ 51.73, 36 ],<br/>      [ 41.24, 48 ],<br/>      [ 33.8, 60 ],<br/>      [ 30.28, 72 ],<br/>      [ 25.38, 96 ],<br/>      [ 22.73, 120 ],<br/>      [ 19.11, 144 ],<br/>    ]
+</pre></code>
+<p>Now for some D3 action. The basic workflow in D3 is to select an html element then modify it, adding drawing elements or what have you, according to our data. If we get it right, the drawing elements will show up in the correct spot on the screen to make a plot or whatever it is you're trying to create.</p>
+</br><p>Here let's start by selecting the D3Div div element, adding an svg layer to it, and setting the height and width. This is the layer we'll draw the plot in. 
+Note that first I'm taking the height and width of the D3Div div and using these as attributes for the svg layer. We use the <code>d3.select()</code> method to select <code>D3Div</code>, then we use <code>.append()</code> to add an svg element. 
+Finally we set the height and width with <code>.attr</code> and store everything in the var <code>svg</code>.</p>
+<pre><code class="javascript">
+ // get the height and width of the target container<br/> //set padding for the graph
+ <br/> container = document.getElementById( &quot;D3Div&quot; ); <br/> <br/> var w = container.offsetWidth<br/> var h = container.offsetHeight<br/> var padding = 50;<br/>
+ <br/> // select the container D3Div and set its attributes. add an &lt;svg&gt; tag to it
+ <br/> var svg = d3.select(&quot;#D3Div&quot;)<br/>            .append(&quot;svg&quot;)<br/>            .attr(&quot;width&quot;, w)<br/>            .attr(&quot;height&quot;, h);
+</pre></code>
+<p>Did you notice the "chained" commands? The commands that are separated by "." are run in series allowing us to block multiple functions into one d3 call.
+</p>
+<h3>Scales</h3>
+<p>Now before we can map data to our svg layer we need to set up a scale. This will scale the data to fit the x and y range of our drawing layer which is itself established by the div size.
+The scale takes two arguments, domain and range. Domain is the interval of our input data, and range is the interval it is scaled to. Check out this image from <a href="http://www.jeromecukier.net/blog/2011/08/11/d3-scales-and-color/">Jerome Cukier</a>
+</br></br>
+<img src="http://i0.wp.com/www.jeromecukier.net/wp-content/uploads/2011/08/d3scale1.png" height='150' width = '300'></img>
+</br></br>
+For our purposes we want the input interval, domain, to span our dataset, and the output to map to the div size minus a little padding. To calculate the span of our input data we're using the built in <code>d3.max()</code> function to loop through the array and find the maximum. 
+Then for the range, we pass our height, width and padding variables.
+</p>
+<pre><code class="javascript">
+ //This makes a scale. takes the max of the arrays and transforms them linearly
+ //Use padding in the range so its not up on the edge
+ var xScale = d3.scaleLinear()<br/>       .domain([-1, d3.max(dataset, function(d) { return d[1]; })])<br/>       .range([padding, width- padding]);<br/>        var yScale = d3.scaleLinear()<br/>       .domain([d3.max(dataset, function(d) { return d[0]; }),0])<br/>       .range([padding, height- padding]);
+</pre></code>
+<p>
+<h3>Let's draw some stuff!!</h3>
+So now we have variables which store functions for selecting the D3Div, the X and Y scales and our datasets. Time to put them together to make something!
+We use the <code>.selectAll()</code> function to select all the circle drawing elements (even though they don't exist yet). Then we load the data with <code>.data()</code>
+and bind it to the elements with <code>.enter</code>. Then we use <code>.append</code> to draw a circle and <code>.attr</code> to set the x and y positions termed 'cx' and 'cy'. 
+The functions we pass to the cx and cy attributes calls our scale functions on the appropriate 'column' of the array. The 'r' attribute defines the radius of the circles as 6.
+This is all repeated for each element of the data.
+</p>
+</p>
+<pre><code class="javascript">
+    svg.selectAll(&quot;circle&quot;)<br/>     .data(dataset)<br/>     .enter()<br/>     .append(&quot;circle&quot;)<br/>     .attr(&quot;cx&quot;, function(d) {<br/>        return xScale(d[1]);<br/>     })<br/>     .attr(&quot;cy&quot;, function(d) {<br/>        return yScale(d[0]);<br/>     })<br/>     .attr(&quot;r&quot;, 6);
+</pre></code>
+<div id = 'dotPlot' class='container'></div>
+<p>
+Not bad! the dots (circles) have been arranged by their cx and cy attributes according to the scaled data. Go ahead and right click and 'inspect element' on the plot to see how it's broken down.
+</br></br>
+Next we want to add a line. To do that we'll make another variable to store a function using <code>ds.line()</code> to set the x and y coordinates of the path.
+Then we append that line to <code>svg</code> using <code>svg.append("path")</code>. We pass the dataset using <code>.datum()</code> this time since we are only drawing one element. Confused?<a href="https://stackoverflow.com/questions/10086167/d3-how-to-deal-with-json-data-structures"> more on .datum() versus .data() by the developer here</a>.
+Finally, we set the "d" attribute (which is an html attribute that defines a path to follow) by calling our line function <code>.attr("d", line);</code>:
+</p>
+<pre><code class="javascript">
+    var line = d3.line()<br/>      .x(function(d) { return xScale(d[1]); })<br/>      .y(function(d) { return yScale(d[0]); });<br/>    svg.append(&quot;path&quot;)<br/>      .datum(dataset)<br/>      .attr(&quot;fill&quot;, &quot;none&quot;)<br/>      .attr(&quot;stroke&quot;, &quot;steelblue&quot;)<br/>      .attr(&quot;stroke-width&quot;, 1.5)<br/>      .attr(&quot;d&quot;, line);
+</pre></code>
+<div id = 'dotLinePlot' class='container'></div>
+<p>
+<h3>Axes</h3>
+Now it's time for some axes. We should be used to storing functions in variables by now and here we make variables of the d3 functions <code>d3.axisLeft()</code> and <code>d3.axisBottom()</code> and pass our scale functions so they're the correct size.
+Then we need to position them. We can use our previously defined height and padding variables to tell them where to sit in the div. 
+Finally, we add them to the plot using <code>.append()</code> and <code>.call()</code>. We set their position by passing <code>xAxisPosition</code> and <code>yAxisPosition</code> to the transform attribute. Note that <code>translate</code> sets an element to the position (x,y):
+</p>
+<pre><code class="javascript">
+    //Set up the axis with the scale we made above
+    var yAxis = d3.axisLeft(yScale);<br/>    var xAxis = d3.axisBottom(xScale);<br/>    
+    //position them. Use the padding to stay inside the div
+    var xAxisPosition = height-padding<br/>    var yAxisPosition = padding-10<br/>    <br/>    //add the x axis
+    svg.append(&quot;g&quot;)<br/>      .attr(&quot;transform&quot;, &quot;translate(0,&quot;+xAxisPosition+&quot;)&quot;)<br/>      .call(xAxis);<br/>    <br/>    //add the y axis
+    svg.append(&quot;g&quot;)<br/>      .attr(&quot;transform&quot;, &quot;translate(&quot;+yAxisPosition+&quot;,0)&quot;)<br/>      .call(yAxis)
+</pre></code>
+<div id = 'dotLinePlotAxes' class='container'></div>
+<p>
+Starting to look more like a plot and less like modern art! 
+<h3>Axis Labels</h3>
+Now we just need some labels.
+We simply set their positition using the <code>height</code>, <code>width</code>, and <code>padding</code> variables and add them to the plat using the now familiar <code>.append</code> and <code>.attr</code> functions:
+Here we can also add a bit of styling using <code>.style</code>.
+</p>
+<pre><code class="javascript">
+    //set the positions
+    var xLabelPositionY = height<br/>    var xLabelPositionX = width/2<br/>    var yLabelPositionY = padding -35<br/>    var yLabelPositionX = 0-(height/2)<br/><br/>    //add them along with their text
+    //can specify styling as well
+    svg.append(&quot;text&quot;)             <br/>      .attr(&quot;y&quot;, xLabelPositionY)<br/>      .attr(&quot;x&quot;, xLabelPositionX)<br/>      .style(&quot;text-anchor&quot;, &quot;middle&quot;)<br/>      .style(&quot;font-family&quot;, &quot;Monospace&quot;)<br/>      .text(&quot;Time&quot;);<br/>    <br/>    //Same for the Y axis.
+    //NOTE: the x and y are inverted because of the rotate!
+    svg.append(&quot;text&quot;)<br/>      .attr(&quot;y&quot;, yLabelPositionY)<br/>      .attr(&quot;x&quot;, yLabelPositionX)            <br/>      .attr(&quot;transform&quot;, &quot;rotate(-90)&quot;) <br/>      .style(&quot;text-anchor&quot;, &quot;middle&quot;)<br/>      .style(&quot;font-family&quot;, &quot;Monospace&quot;)<br/>      .text(&quot;Counts&quot;);
+</pre></code>
+<div id = 'dotLinePlotAxesLabels' class='plotContainer'></div>
+</br>
+<p>
+Hey, that's a proper plot right there! But wait there's more! Since this is javascript we can do all the fun javascripty things like write callback functions! 
+<h3>Making plots interactive:</h3>
+Here let's make a function that makes the dots (circles) clickable. To do that, we make a function 'clicked'. The function has four major steps:
+</br></br>1 : Select and set all the circles to black (to undo previous color changes).
+</br></br>2 : Invert the scale to go from pixels to data and call <code>findNearest()</code> to get the closest data point. This function from <a href="http://blog.scottlogic.com/2014/09/29/crosshairs.html">Andy Aiken on scottlogic.com </a> is defined just below. It loops through the data and compares each data point to the clicked data and finds the smallest difference i.e. the closest data point. Clever huh?
+</br></br>3 : Use <code>nearest</code> to set the div <code>clickTable</code> to include those points.
+</br></br>4 : Change the color of the clicked dot to red (and kind of blink while doing so).
+</br></br>
+We invoke the function <code>clicked</code> by adding it to the end of the the circle drawing code chunk (since it targets only the circles).
+</p>
+<pre><code class="javascript">
+     svg.selectAll(&quot;circle&quot;)<br/>       .data(dataset)<br/>       .enter()<br/>       .append(&quot;circle&quot;)<br/>       .attr(&quot;cx&quot;, function(d) {<br/>        return xScale(d[1]);<br/>       })<br/>       .attr(&quot;cy&quot;, function(d) {<br/>        return yScale(d[0]);<br/>       })<br/>       .attr(&quot;r&quot;, 6)<br/>       .on(&quot;click&quot;, clicked);<br/><br/>    function clicked(d, i) {  <br/>      // set all to black to 'undo' previous clicks
+     d3.selectAll(&quot;circle&quot;)<br/>        .style(&quot;fill&quot;, &quot;black&quot;)<br/>        .attr(&quot;r&quot;, 6)<br/><br/>    // invert the scale to use the find nearest    
+     var xMouse = xScale.invert(d3.mouse(this)[0]),<br/>          nearest = findNearest(xMouse);<br/>          <br/>      document.querySelector(&quot;.clickTableContainer&quot;).innerHTML = &quot;Clicked Datapoints: &quot;+nearest;; <br/>      
+     //change color of the dot  
+     d3.select(this).transition()<br/>        .style(&quot;fill&quot;, &quot;red&quot;)<br/>        .attr(&quot;r&quot;, 12)<br/>      .transition()<br/>        .attr(&quot;r&quot;, 6)<br/>    }<br/>    <br/>     // function to get the nearest data
+     //loops through dataset and compares the difference to mouse data
+     //then finds the closest datapoint
+     function findNearest(xMouse) {<br/>        var nearest = null,<br/>            dx = Number.MAX_VALUE;<br/>        dataset.forEach(function(data) {<br/>            var xData = data[1],<br/>                xDiff = Math.abs(xMouse - xData);<br/>            if (xDiff &lt; dx) {<br/>                dx = xDiff;<br/>                nearest = data;<br/>            }<br/>        });<br/>        return nearest;<br/>    }
+</pre></code>
+   <div id='D3Div' class='container D3Plot'><!-- D3 chart will appear here! --></div>
+   <div id='clickTable' class='clickTableContainer'><!-- Clicked points will appear here! --></div>
+<h3>
+ What about those hover labels? 
+</h3>
+<p> They're rendered by <a href="https://github.com/jaz303/tipsy">tipsy.</a> Here's the relevant block:
+</p>
+<pre><code class="javascript">
+    //tipsy handles the tool tip:
+    $('svg circle').tipsy({ <br/>        gravity: 'w', <br/>        html: true, <br/>        title: function() {<br/>          var d = this.__data__<br/>          return 'Time:'+d[1]+'&lt;br&gt;Counts:'+d[0]; <br/>        }<br/>   });
+</pre></code>
+
+<h3>Great! But doesn't plotly do all this?
+</h3>
+<p>
+As discussed in the introduction, plotly is great for routine charting. 
+If you want to do anything outside the bounds of plotly though, D3 can make it happen.
+For example, here's the same plot drawn with poop emojis!
+</p>
+<a name="poop"></a> 
+<div id='poopPlot' class='plotContainer'><!-- D3 chart will appear here! --></div>
+<a name="code"></a>
+<h3>Putting it all together:</h3>
+<p> In conclusion, I usually don't recommend re-inventing the wheel. So if plotly provides what you're looking for, that might be the way to go. If, however you want to make something completely new, or just like a challenge D3 is worth taking the time to look into. The learning curve for D3 is steep but once you get a handle on the workflow it comes quite naturally. 
+Also check out <a href="https://bl.ocks.org/">bl.ocks.org</a> for inspiration and code. Good luck!
+</br></br>
+Here's all the code in one block for copy pasting: </p>
+<pre><code class="javascript">
+  &lt;!-- D3 --&gt;<br/>  &lt;script src=&quot;https://d3js.org/d3.v4.min.js&quot;&gt;&lt;/script&gt;<br/>  &lt;!-- D3 requires jquery--&gt;<br/>  &lt;script src=&quot;https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js&quot;&gt;&lt;/script&gt;<br/>  &lt;!-- Tipsy will make the hover label--&gt;<br/>  &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/jquery.tipsy/1.0.3/jquery.tipsy.min.js&quot;&gt;&lt;/script&gt;<br/>  &lt;link href=&quot;https://cdnjs.cloudflare.com/ajax/libs/jquery.tipsy/1.0.3/jquery.tipsy.min.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;<br/>  &lt;script&gt;<br/> <br/> /*<br/>  * The Data<br/>  */<br/> <br/> var dataset = [<br/>      [ 13.88, -1 ],<br/>      [ 8.28, 0 ],<br/>      [ 45.29, 2 ],<br/>      [ 25.71, 4 ],<br/>      [ 24.13, 8 ],<br/>      [ 101.49, 12 ],<br/>      [ 155.75, 16 ],<br/>      [ 142.93, 20 ],<br/>      [ 100.38, 24 ],<br/>      [ 51.73, 36 ],<br/>      [ 41.24, 48 ],<br/>      [ 33.8, 60 ],<br/>      [ 30.28, 72 ],<br/>      [ 25.38, 96 ],<br/>      [ 22.73, 120 ],<br/>      [ 19.11, 144 ],<br/>    ]<br/><br/> /*<br/>  * The Setup<br/>  */<br/><br/> // get the height and width of the target container<br/> //set padding for the graph<br/> container = document.getElementById( &quot;D3Div&quot; ); <br/> <br/> var width = container.offsetWidth<br/> var height = container.offsetHeight<br/> var padding = 50;<br/><br/><br/> //This makes a scale. takes the max of the arrays and transforms them linearly<br/> //Use padding in the range so its not up on the edge<br/> var xScale = d3.scaleLinear()<br/>       .domain([-1, d3.max(dataset, function(d) { return d[1]; })])<br/>          .range([padding, width- padding]);<br/>        var yScale = d3.scaleLinear()<br/>       .domain([d3.max(dataset, function(d) { return d[0]; }),0])<br/>          .range([padding, height- padding]);<br/><br/> // select the container D3Div and set its attributes. add an &lt;svg&gt; tag to it<br/> var svg = d3.selectAll(&quot;.D3Plot&quot;)<br/>            .append(&quot;svg&quot;)<br/>            .attr(&quot;width&quot;, width)<br/>            .attr(&quot;height&quot;, height);<br/> <br/> /*<br/>  * The Plot Drawing Elements<br/>  */<br/> <br/> /* <br/>   You have to select the circles even before they're created<br/>   the data function binds data to the circles<br/>   the enter function creates the circles<br/>   the append function sticks them on<br/>   then we set the attributes for each. x,y and r=radius<br/> */<br/> <br/>    svg.selectAll(&quot;circle&quot;)<br/>     .data(dataset)<br/>     .enter()<br/>     .append(&quot;circle&quot;)<br/>     .attr(&quot;cx&quot;, function(d) {<br/>        return xScale(d[1]);<br/>     })<br/>     .attr(&quot;cy&quot;, function(d) {<br/>        return yScale(d[0]);<br/>     })<br/>     .attr(&quot;r&quot;, 6)<br/>     .on(&quot;click&quot;, clicked);<br/>   <br/>   //Replace the chunk above with this commented chunk for a poop plot:<br/>   <br/>   /*<br/>    svg.selectAll(&quot;image&quot;)<br/>      .data(dataset)<br/>      .enter()<br/>      .append(&quot;svg:image&quot;)<br/>      .attr('x', function(d) {<br/>        return xScale(d[1]);<br/>      })<br/>      .attr('y', function(d) {<br/>        return yScale(d[0]);<br/>      })<br/>      .attr('width', 20)<br/>      .attr('height', 20)<br/>      .attr(&quot;xlink:href&quot;, &quot;https://cdn.shopify.com/s/files/1/1061/1924/products/Poop_Emoji_7b204f05-eec6-4496-91b1-351acc03d2c7_grande.png?v=1480481059&quot;)<br/>   */<br/><br/>    //tipsy handles the tool tip:<br/>   $('svg circle').tipsy({ <br/>        gravity: 'w', <br/>        html: true, <br/>        title: function() {<br/>          var d = this.__data__<br/>          return 'Time:'+d[1]+'&lt;br&gt;Counts:'+d[0]; <br/>        }<br/>   });<br/><br/>    //create a line function<br/>    //use the same scales<br/>    var line = d3.line()<br/>    .x(function(d) { return xScale(d[1]); })<br/>    .y(function(d) { return yScale(d[0]); });<br/>    <br/>   /*<br/>     append the line function to the svg.<br/>     note you could put some of these attributes in a class .line and call:<br/>     .attr(&quot;class&quot;, &quot;line&quot;)<br/>   */<br/>   <br/>    svg.append(&quot;path&quot;)<br/>      .datum(dataset)<br/>      .attr(&quot;fill&quot;, &quot;none&quot;)<br/>      .attr(&quot;stroke&quot;, &quot;steelblue&quot;)<br/>      .attr(&quot;stroke-width&quot;, 1.5)<br/>      .attr(&quot;d&quot;, line);<br/>      <br/>    /*<br/>     * Axes <br/>     */<br/><br/>    //Set up the axis with the scale we made above<br/>    var yAxis = d3.axisLeft(yScale);<br/>    var xAxis = d3.axisBottom(xScale);<br/>    <br/>    //position them. Use the padding to stay inside the div<br/>    var xAxisPosition = height-padding<br/>    var yAxisPosition = padding-10<br/>    <br/>    //add the x axis<br/>    svg.append(&quot;g&quot;)<br/>      .attr(&quot;transform&quot;, &quot;translate(0,&quot;+xAxisPosition+&quot;)&quot;)<br/>      .call(xAxis);<br/>    <br/>    //add the y axis<br/>    svg.append(&quot;g&quot;)<br/>      .attr(&quot;transform&quot;, &quot;translate(&quot;+yAxisPosition+&quot;,0)&quot;)<br/>      .call(yAxis)<br/><br/>    /*<br/>     * Axis Labels<br/>     */<br/>  <br/>    //set the positions<br/>    var xLabelPositionY = height<br/>    var xLabelPositionX = width/2<br/>    var yLabelPositionY = padding -35<br/>    var yLabelPositionX = 0-(height/2)<br/> <br/>    //add them along with their text<br/>    //can specify styling as well<br/>    svg.append(&quot;text&quot;)             <br/>      .attr(&quot;y&quot;, xLabelPositionY)<br/>      .attr(&quot;x&quot;, xLabelPositionX)<br/>      .style(&quot;text-anchor&quot;, &quot;middle&quot;)<br/>      .style(&quot;font-family&quot;, &quot;Monospace&quot;)<br/>      .text(&quot;Time&quot;);<br/>    <br/>    //Same for the Y axis.<br/>    //NOTE: the x and y are inverted because of the rotate!<br/>    svg.append(&quot;text&quot;)<br/>      .attr(&quot;y&quot;, yLabelPositionY)<br/>      .attr(&quot;x&quot;, yLabelPositionX)            <br/>      .attr(&quot;transform&quot;, &quot;rotate(-90)&quot;) <br/>      .style(&quot;text-anchor&quot;, &quot;middle&quot;)<br/>      .style(&quot;font-family&quot;, &quot;Monospace&quot;)<br/>      .text(&quot;Counts&quot;);<br/><br/>    function clicked(d, i) {  <br/>      // set all to black to 'undo' previous clicks<br/>      d3.selectAll(&quot;circle&quot;)<br/>        .style(&quot;fill&quot;, &quot;black&quot;)<br/>        .attr(&quot;r&quot;, 6)<br/><br/>   // invert the scale to use the find nearest    <br/>      var xMouse = xScale.invert(d3.mouse(this)[0]),<br/>          nearest = findNearest(xMouse);<br/>          <br/>      divs = document.querySelectorAll(&quot;.clickTableContainer&quot;);<br/>      for (i = 0, len = divs.length; i &lt; len; i++) {<br/>        divs[i].innerHTML = &quot;Clicked Data Points: &quot;+ nearest;<br/>      };<br/>      <br/>      //change color of the dot  <br/>      d3.select(this).transition()<br/>        .style(&quot;fill&quot;, &quot;red&quot;)<br/>        .attr(&quot;r&quot;, 12)<br/>      .transition()<br/>        .attr(&quot;r&quot;, 6)<br/>    }<br/>    <br/>    // function to get the nearest data<br/>    //loops through dataset and compares the difference to mouse data<br/>    //then finds the closest datapoint<br/>    function findNearest(xMouse) {<br/>        var nearest = null,<br/>            dx = Number.MAX_VALUE;<br/>        dataset.forEach(function(data) {<br/>            var xData = data[1],<br/>                xDiff = Math.abs(xMouse - xData);<br/>            if (xDiff &lt; dx) {<br/>                dx = xDiff;<br/>                nearest = data;<br/>            }<br/>        });<br/>        return nearest;<br/>    }
+</pre></code>
+
+  <!-- D3 -->
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <!-- D3 requires jquery-->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <!-- Tipsy will make the hover label-->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tipsy/1.0.3/jquery.tipsy.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tipsy/1.0.3/jquery.tipsy.min.css" rel="stylesheet" type="text/css" />
+  <script>
+ 
+ /*
+  * The Data
+  */
+ 
+ var dataset = [
+      [ 13.88, -1 ],
+      [ 8.28, 0 ],
+      [ 45.29, 2 ],
+      [ 25.71, 4 ],
+      [ 24.13, 8 ],
+      [ 101.49, 12 ],
+      [ 155.75, 16 ],
+      [ 142.93, 20 ],
+      [ 100.38, 24 ],
+      [ 51.73, 36 ],
+      [ 41.24, 48 ],
+      [ 33.8, 60 ],
+      [ 30.28, 72 ],
+      [ 25.38, 96 ],
+      [ 22.73, 120 ],
+      [ 19.11, 144 ],
+    ]
+
+ /*
+  * The Setup
+  */
+
+ // get the height and width of the target container
+ //set padding for the graph
+ container = document.getElementById( "D3Div" ); 
+ 
+ var width = container.offsetWidth
+ var height = container.offsetHeight
+ var padding = 50;
+
+
+ //This makes a scale. takes the max of the arrays and transforms them linearly
+ //Use padding in the range so its not up on the edge
+ var xScale = d3.scaleLinear()
+     .domain([-1, d3.max(dataset, function(d) { return d[1]; })])
+     .range([padding, width- padding]);
+    var yScale = d3.scaleLinear()
+     .domain([d3.max(dataset, function(d) { return d[0]; }),0])
+     .range([padding, height- padding]);
+
+ // select the container D3Div and set its attributes. add an <svg> tag to it
+ var svg = d3.selectAll(".D3Plot")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+ 
+ /*
+  * The Plot Drawing Elements
+  */
+ 
+ /* 
+   You have to select the circles even before they're created
+   the data function binds data to the circles
+   the enter function creates the circles
+   the append function sticks them on
+   then we set the attributes for each. x,y and r=radius
+ */
+ 
+    svg.selectAll("circle")
+     .data(dataset)
+     .enter()
+     .append("circle")
+     .attr("cx", function(d) {
+        return xScale(d[1]);
+     })
+     .attr("cy", function(d) {
+        return yScale(d[0]);
+     })
+     .attr("r", 6)
+     .on("click", clicked);
+   
+   //Replace the chunk above with this commented chunk for a poop plot:
+   
+   /*
+    svg.selectAll("image")
+      .data(dataset)
+      .enter()
+      .append("svg:image")
+      .attr('x', function(d) {
+        return xScale(d[1]);
+      })
+      .attr('y', function(d) {
+        return yScale(d[0]);
+      })
+      .attr('width', 20)
+      .attr('height', 20)
+      .attr("xlink:href", "https://cdn.shopify.com/s/files/1/1061/1924/products/Poop_Emoji_7b204f05-eec6-4496-91b1-351acc03d2c7_grande.png?v=1480481059")
+   */
+
+ //tipsy handles the tool tip:
+   $('svg circle').tipsy({ 
+        gravity: 'w', 
+        html: true, 
+        title: function() {
+          var d = this.__data__
+          return 'Time:'+d[1]+'</br>Counts:'+d[0]; 
+        }
+   });
+
+    //create a line function
+    //use the same scales
+    var line = d3.line()
+    .x(function(d) { return xScale(d[1]); })
+    .y(function(d) { return yScale(d[0]); });
+    
+   /*
+     append the line function to the svg.
+     note you could put some of these attributes in a class .line and call:
+     .attr("class", "line")
+   */
+   
+ svg.append("path")
+      .datum(dataset)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5)
+      .attr("d", line);
+      
+    /*
+  * Axes 
+  */
+
+ //Set up the axis with the scale we made above
+    var yAxis = d3.axisLeft(yScale);
+    var xAxis = d3.axisBottom(xScale);
+    
+    //position them. Use the padding to stay inside the div
+    var xAxisPosition = height-padding
+    var yAxisPosition = padding-10
+    
+    //add the x axis
+ svg.append("g")
+      .attr("transform", "translate(0,"+xAxisPosition+")")
+      .call(xAxis);
+    
+    //add the y axis
+    svg.append("g")
+      .attr("transform", "translate("+yAxisPosition+",0)")
+      .call(yAxis)
+
+ /*
+  * Axis Labels
+  */
+  
+ //set the positions
+ var xLabelPositionY = height
+ var xLabelPositionX = width/2
+ var yLabelPositionY = padding -35
+ var yLabelPositionX = 0-(height/2)
+ 
+ //add them along with their text
+ //can specify styling as well
+    svg.append("text")             
+      .attr("y", xLabelPositionY)
+      .attr("x", xLabelPositionX)
+      .style("text-anchor", "middle")
+      .style("font-family", "Monospace")
+      .text("Time");
+    
+    //Same for the Y axis.
+    //NOTE: the x and y are inverted because of the rotate!
+    svg.append("text")
+      .attr("y", yLabelPositionY)
+      .attr("x", yLabelPositionX)            
+      .attr("transform", "rotate(-90)") 
+      .style("text-anchor", "middle")
+      .style("font-family", "Monospace")
+      .text("Counts");
+      
+    //This makes the dotplot only
+    var dotPlotSvg = d3.select("#dotPlot")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    dotPlotSvg.selectAll("circle")
+     .data(dataset)
+     .enter()
+     .append("circle")
+     .attr("cx", function(d) {
+        return xScale(d[1]);
+     })
+     .attr("cy", function(d) {
+        return yScale(d[0]);
+     })
+     .attr("r", 6);   
+     
+      //This makes the dot-line plot only 
+    var dotLinePlotSvg = d3.select("#dotLinePlot")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    dotLinePlotSvg.selectAll("circle")
+      .data(dataset)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d) {
+        return xScale(d[1]);
+      })
+      .attr("cy", function(d) {
+        return yScale(d[0]);
+      })
+      .attr("r", 6);
+ dotLinePlotSvg.append("path")
+      .datum(dataset)
+      .attr("d", line)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5);
+      
+      //This makes the dot-line axes plot 
+    var dotLinePlotAxesSvg = d3.select("#dotLinePlotAxes")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    dotLinePlotAxesSvg.selectAll("circle")
+      .data(dataset)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d) {
+        return xScale(d[1]);
+      })
+      .attr("cy", function(d) {
+        return yScale(d[0]);
+      })
+      .attr("r", 6);
+ dotLinePlotAxesSvg.append("path")
+      .datum(dataset)
+      .attr("d", line)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5);
+    dotLinePlotAxesSvg.append("g")
+      .attr("transform", "translate(0,"+xAxisPosition+")")
+      .call(xAxis);
+    dotLinePlotAxesSvg.append("g")
+      .attr("transform", "translate("+yAxisPosition+",0)")
+      .call(yAxis)
+    
+    //This makes the dot-line axes plot 
+    var dotLinePlotAxesLabelsSvg = d3.select("#dotLinePlotAxesLabels")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    dotLinePlotAxesLabelsSvg.selectAll("circle")
+      .data(dataset)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d) {
+        return xScale(d[1]);
+      })
+      .attr("cy", function(d) {
+        return yScale(d[0]);
+      })
+      .attr("r", 6);
+ dotLinePlotAxesLabelsSvg.append("path")
+      .datum(dataset)
+      .attr("d", line)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5);
+    dotLinePlotAxesLabelsSvg.append("g")
+      .attr("transform", "translate(0,"+xAxisPosition+")")
+      .call(xAxis);
+    dotLinePlotAxesLabelsSvg.append("g")
+      .attr("transform", "translate("+yAxisPosition+",0)")
+      .call(yAxis)
+    dotLinePlotAxesLabelsSvg.append("text")             
+      .attr("y", xLabelPositionY)
+      .attr("x", xLabelPositionX)
+      .style("text-anchor", "middle")
+      .style("font-family", "Monospace")
+      .text("Time");
+    dotLinePlotAxesLabelsSvg.append("text")
+      .attr("y", yLabelPositionY)
+      .attr("x", yLabelPositionX)            
+      .attr("transform", "rotate(-90)") 
+      .style("text-anchor", "middle")
+      .style("font-family", "Monospace")
+      .text("Counts");
+    
+    //The poop plot
+    var poopPlotSvg = d3.select("#poopPlot")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    poopPlotSvg.selectAll("image")
+      .data(dataset)
+      .enter()
+      .append("svg:image")
+      .attr('x', function(d) {
+        return xScale(d[1]);
+      })
+      .attr('y', function(d) {
+        return yScale(d[0]);
+      })
+      .attr('width', 20)
+      .attr('height', 20)
+      .attr("xlink:href", "https://cdn.shopify.com/s/files/1/1061/1924/products/Poop_Emoji_7b204f05-eec6-4496-91b1-351acc03d2c7_grande.png?v=1480481059")
+ poopPlotSvg.append("path")
+      .datum(dataset)
+      .attr("d", line)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5);
+    poopPlotSvg.append("g")
+      .attr("transform", "translate(0,"+xAxisPosition+")")
+      .call(xAxis);
+    poopPlotSvg.append("g")
+      .attr("transform", "translate("+yAxisPosition+",0)")
+      .call(yAxis)
+    poopPlotSvg.append("text")             
+      .attr("y", xLabelPositionY)
+      .attr("x", xLabelPositionX)
+      .style("text-anchor", "middle")
+      .style("font-family", "Monospace")
+      .text("Time");
+    poopPlotSvg.append("text")
+      .attr("y", yLabelPositionY)
+      .attr("x", yLabelPositionX)            
+      .attr("transform", "rotate(-90)") 
+      .style("text-anchor", "middle")
+      .style("font-family", "Monospace")
+      .text("Counts");
+            
+    function clicked(d, i) {  
+      // set all to black to 'undo' previous clicks
+      d3.selectAll("circle")
+        .style("fill", "black")
+        .attr("r", 6)
+
+   // invert the scale to use the find nearest    
+      var xMouse = xScale.invert(d3.mouse(this)[0]),
+          nearest = findNearest(xMouse);
+          
+      divs = document.querySelectorAll(".clickTableContainer");
+      for (i = 0, len = divs.length; i < len; i++) {
+        divs[i].innerHTML = "Clicked Data Points: "+ nearest;
+      };
+      
+      //change color of the dot  
+      d3.select(this).transition()
+        .style("fill", "red")
+        .attr("r", 12)
+      .transition()
+        .attr("r", 6)
+    }
+    
+    // function to get the nearest data
+    //loops through dataset and compares the difference to mouse data
+    //then finds the closest datapoint
+    function findNearest(xMouse) {
+        var nearest = null,
+            dx = Number.MAX_VALUE;
+        dataset.forEach(function(data) {
+            var xData = data[1],
+                xDiff = Math.abs(xMouse - xData);
+            if (xDiff < dx) {
+                dx = xDiff;
+                nearest = data;
+            }
+        });
+        return nearest;
+    }
+
+</script>
+
+</div>
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

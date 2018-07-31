@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-06-27T21:13:14JST">2017-06-27</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/06/running-blast-in-shiny-web-application.html">Running BLAST in a shiny web application</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  <b>NOTE: The ShinyBLAST version described below may or may not work.</b></br>
+<b><a href="https://github.com/ScientistJake/Shiny_BLAST">CLICK HERE</a> to get the most up to date version.</b></br>
+</br>
+Well the past few posts have been very Shiny-centric and today is no exception (this is afterall the majority of my workload right now). This week i encountered an interesting problem: How to set up a BLAST server for a Shiny web app. It took some tinkering but I finally arrived at a pretty decent app!
+<br />
+If you want to jump right in, feel free to grab a copy of everything from the <a href="https://github.com/ScientistJake/Shiny_BLAST">Github repository</a>. <br />
+<br />
+For any of the following to work you need to have installed the <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">latest BLAST executables</a> and have these programs be available in your $PATH.<br />
+<br />
+The first challenge was to generate a user interface. This wasn't terribly difficult. For inputs I knew we needed a large text input box to handle the fasta, then a few options for evalue and database. It's also essential to have a "go button" in this case; since BLASTing is slow and computationally heavy, we don't want the BLAST to be called until everything is set. Finally as output, I wanted a simple table with the hits and below that, the alignment information for any selected hit. Here's what that looks like:<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-LlMxq12Ze60/WVIqXb-smiI/AAAAAAAAJME/7XWKnzq48fobN7tk1nzdkKD1jOYlP63YwCLcBGAs/s1600/Screen%2BShot%2B2017-06-27%2Bat%2B11.49.37.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="700" data-original-width="488" src="https://3.bp.blogspot.com/-LlMxq12Ze60/WVIqXb-smiI/AAAAAAAAJME/7XWKnzq48fobN7tk1nzdkKD1jOYlP63YwCLcBGAs/s1600/Screen%2BShot%2B2017-06-27%2Bat%2B11.49.37.png" /></a></div>
+<br />
+The code to build the ui is pretty straight forward. Just two panels, one for the input and one for the results. A little minor formatting here and there for the buttons etc.<br />
+<pre><code>
+library(shinythemes)
+library(DT)
+
+ui &lt;- fluidPage(theme = shinytheme("cerulean"),
+ tagList(
+  tags$head(
+  tags$link(rel="stylesheet", type="text/css",href="style.css"),
+  tags$script(type="text/javascript", src = "busy.js")
+ )
+ ),
+ 
+ #This block gives us all the inputs:
+ mainPanel(
+   headerPanel('Shiny Blast!'),
+   textAreaInput('query', 'Input sequence:', value = "", placeholder = "", width = "600px", height="200px"),
+   selectInput("db", "Databse:", choices=c("NvERTx.4","nr"), width="120px"),
+   div(style="display:inline-block",
+   selectInput("program", "Program:", choices=c("blastn","tblastn"), width="100px")),
+   div(style="display:inline-block",
+   selectInput("eval", "e-value:", choices=c(1,0.001,1e-4,1e-5,1e-10), width="120px")),
+   actionButton("blast", "BLAST!")
+ ),
+ 
+ #this snippet generates a 'busy' indicator for long BLASTs
+ div(class = "busy", 
+   p("Calculation in progress.."), 
+   img(src="https://i.stack.imgur.com/8puiO.gif", height = 100, width = 100,align = "center")
+ ),
+ 
+ #Basic results output
+ mainPanel(
+   h4("Results"),
+   DT::dataTableOutput("blastResults"),
+   p("Alignment:", tableOutput("clicked") ),
+   verbatimTextOutput("alignment")
+ )
+)
+
+</code></pre>
+One thing that might pop out in the above is the busy indicator. This is important since BLASTing against a large database like nr takes a looooong time. The indicator above is <a href="https://gist.github.com/withr/8799489">a really elegant solution from github user withr</a>. Then when the user clicks BLAST the following icon pops up and the results pane greys out:<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://i.stack.imgur.com/8puiO.gif" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="400" height="200" src="https://i.stack.imgur.com/8puiO.gif" width="200" /></a></div>
+<br />
+<br />
+Be sure to include the js and css files linked for it to work!<br />
+<br />
+The hard part of this project was making a 'reasonably' robust BLAST execution and results parse. The execution was pretty simple. To do that the app creates a temporary file for the fasta, then generates a system command to run the blast. The results (in xml) are then captured using the intern =T option of the system call.<br />
+<br />
+I debated using and tested different blast outputs but settled on xml because it includes some useful information like the alignments and the full name of the hits (not just the gene symbol). The downside to this is we need to work with xml which if you're not used to it like me can be quite difficult.<br />
+<br />
+Here's an example of the blastoutput in xml:<br />
+<pre><code>
+xmltop
+##&lt;BlastOutput&gt;
+## &lt;BlastOutput_program&gt;blastn&lt;/BlastOutput_program&gt;
+## &lt;BlastOutput_version&gt;BLASTN 2.6.0+&lt;/BlastOutput_version&gt;
+## &lt;BlastOutput_reference&gt;Zheng Zhang, Scott Schwartz, Lukas Wagner, and Webb Miller (2000), "A greedy algorithm for aligning DNA sequences", J Comput Biol 2000; 7(1-2):203-14.&lt;/BlastOutput_reference&gt;
+## &lt;BlastOutput_db&gt;/Users/Jake/Documents/GitHub_repos/NvER_plotter_django/nemVec_ER/blast_db/NvERTx.4&lt;/BlastOutput_db&gt;
+## &lt;BlastOutput_query-ID&gt;Query_1&lt;/BlastOutput_query-ID&gt;
+## &lt;BlastOutput_query-def&gt;Query&lt;/BlastOutput_query-def&gt;
+## &lt;BlastOutput_query-len&gt;206&lt;/BlastOutput_query-len&gt;
+## &lt;BlastOutput_param&gt;
+##  &lt;Parameters&gt;
+##  &lt;Parameters_expect&gt;10&lt;/Parameters_expect&gt;
+##  &lt;Parameters_sc-match&gt;1&lt;/Parameters_sc-match&gt;
+##  &lt;Parameters_sc-mismatch&gt;-2&lt;/Parameters_sc-mismatch&gt;
+##  &lt;Parameters_gap-open&gt;0&lt;/Parameters_gap-open&gt;
+##  &lt;Parameters_gap-extend&gt;0&lt;/Parameters_gap-extend&gt;
+##  &lt;Parameters_filter&gt;m;&lt;/Parameters_filter&gt;
+##  &lt;/Parameters&gt;
+## &lt;/BlastOutput_param&gt;
+## &lt;BlastOutput_iterations&gt;
+##  &lt;Iteration&gt;
+##   &lt;Iteration_iter-num&gt;1&lt;/Iteration_iter-num&gt;
+##    &lt;Iteration_query-ID&gt;Query_1&lt;/Iteration_query-ID&gt;
+##    &lt;Iteration_query-def&gt;Query&lt;/Iteration_query-def&gt;
+##    &lt;Iteration_query-len&gt;206&lt;/Iteration_query-len&gt;
+##    &lt;Iteration_hits&gt;
+##     &lt;Hit&gt;
+##      &lt;Hit_num&gt;1&lt;/Hit_num&gt;
+##      &lt;Hit_id&gt;TRINITY_DN73914_c8_g1_i1&lt;/Hit_id&gt;
+##      &lt;Hit_def&gt;NvERTx.4.172576&lt;/Hit_def&gt;
+##      &lt;Hit_accession&gt;TRINITY_DN73914_c8_g1_i1&lt;/Hit_accession&gt;
+##      &lt;Hit_len&gt;206&lt;/Hit_len&gt;
+##      &lt;Hit_hsps&gt;
+##       &lt;Hsp&gt;
+##        &lt;Hsp_num&gt;1&lt;/Hsp_num&gt;
+##        &lt;Hsp_bit-score&gt;381.53&lt;/Hsp_bit-score&gt;
+##        &lt;Hsp_score&gt;206&lt;/Hsp_score&gt;
+##        &lt;Hsp_evalue&gt;4.84514e-105&lt;/Hsp_evalue&gt;
+##        &lt;Hsp_query-from&gt;1&lt;/Hsp_query-from&gt;
+##        &lt;Hsp_query-to&gt;206&lt;/Hsp_query-to&gt;
+##        &lt;Hsp_hit-from&gt;1&lt;/Hsp_hit-from&gt;
+##        &lt;Hsp_hit-to&gt;206&lt;/Hsp_hit-to&gt;
+##        &lt;Hsp_query-frame&gt;1&lt;/Hsp_query-frame&gt;
+##        &lt;Hsp_hit-frame&gt;1&lt;/Hsp_hit-frame&gt;
+##        &lt;Hsp_identity&gt;206&lt;/Hsp_identity&gt;
+##        &lt;Hsp_positive&gt;206&lt;/Hsp_positive&gt;
+##        &lt;Hsp_gaps&gt;0&lt;/Hsp_gaps&gt;
+##        &lt;Hsp_align-len&gt;206&lt;/Hsp_align-len&gt;
+##...
+</code></pre>
+So for these results I needed to loop over them using xpathApply. You can see below where I extract the different elements and reference them to the tree above. I also use: 
+<br />
+<pre><code>if(is.null(something){} else {...}</code></pre>
+quite liberally since it really makes shiny apps run a lot more cleanly.<br />
+<br />
+So without further ado here's the server code. I don't go through it here chunk by chunk but hopefully you can follow along with the comments!<br />
+<br />
+<pre><code>
+require(XML)
+library(plyr)
+library(dplyr)
+library(DT)
+
+server &lt;- function(input, output, session){
+ 
+ blastresults &lt;- eventReactive(input$blast, {
+ 
+   #gather input and set up temp file
+   query &lt;- input$query
+   tmp &lt;- tempfile(fileext = ".fa")
+ 
+   #if else chooses the right database
+   #here you could add more databases
+   if (input$db =="NvERTx.4"){
+     db &lt;- c("/Users/Jake/blast_db/NvERTx.4")
+     remote &lt;- c("")
+   } else {
+     db &lt;- c("nr")
+     #add remote option for nr since we don't have a local copy
+     remote &lt;- c("-remote")
+   }
+ 
+   #this makes sure the fasta is formatted properly
+   if (startsWith(query, "&gt;")){
+     writeLines(query, tmp)
+   } else {
+     writeLines(paste0("&gt;Query\n",query), tmp)
+   }
+ 
+   #calls the blast
+   data &lt;- system(paste0(input$program," -query ",tmp," -db ",db," -dust no -evalue ",input$eval," -outfmt 5 -max_hsps 1 -max_target_seqs 10 ",remote), intern = T)
+   xmlParse(data)
+ }, ignoreNULL= T)
+
+ #Now to parse the results...
+ parsedresults &lt;- reactive({
+   if (is.null(blastresults())){}
+   else {
+     xmltop = xmlRoot(blastresults())
+ 
+     #the first chunk extracts elements from the xml
+     results &lt;- xpathApply(blastresults(), '//Iteration',function(row){
+       query_ID &lt;- getNodeSet(row, 'Iteration_query-def') %&gt;% sapply(., xmlValue)
+       hit_IDs &lt;- getNodeSet(row, 'Iteration_hits//Hit//Hit_id') %&gt;% sapply(., xmlValue)
+       hit_length &lt;- getNodeSet(row, 'Iteration_hits//Hit//Hit_len') %&gt;% sapply(., xmlValue)
+       bitscore &lt;- getNodeSet(row, 'Iteration_hits//Hit//Hit_hsps//Hsp//Hsp_bit-score') %&gt;% sapply(., xmlValue)
+       eval &lt;- getNodeSet(row, 'Iteration_hits//Hit//Hit_hsps//Hsp//Hsp_evalue') %&gt;% sapply(., xmlValue)
+       cbind(query_ID,hit_IDs,hit_length,bitscore,eval)
+     })
+     #this ensures that NAs get added for no hits
+     results <- 40="" a="" align="" alignment="" alignments="" alignx="" as.data.frame="" blastresults="" blastresults_rows_selected="" bottom="" br="" breaks="" c="" carachters="" cbind="" chunk="" clicked="" colnames="" data.frame="" datatable="" do.call="" e-value="" else="" ength="" every="" for="" function="" get="" getnodeset="" gsub="" gt="" i="" id="" if="" input="" is.null="" it="" it_hsps="" lapply="" length="" look="" loop="" lt="" makes="" mid="" mini="" n="" names="" null="" on="" output="" over="" parsedresults="" paste0="" paste="" phew...="" print="" rbind.fill="" rbind="" renderdatatable="" rendertable="" rendertext="" results="" returns="" row="" rownames="T,colnames" rows="" sapply="" score="" selection="single" sp="" sp_hseq="" sp_midline="" sp_qseq="" split="" split_out="" splits="" stringsasfactors="FALSE)}))" strsplit="" t="" table="" tableout="" teration="" teration_hits="" the="" them="" this="" to="" together="" top="" uery="" unlist="" with="" wrapped="" xml="" xmltop="xmlRoot(blastresults())" xmlvalue="" xpathapply="" y="">
+</-></code></pre>
+<br />
+Okay that wasn't so bad. But I could make the reporting more robust instead of having two code chunks for single and multi fasta queries. The most important thing is it works! In the future I'd like to roll this into a package but for now I'll just include everything else we need to make it run.<br />
+<br />
+This is the js for the busy indicator:<br />
+<pre><code>
+setInterval(function(){
+ if ($('html').attr('class')=='shiny-busy') {
+   setTimeout(function() {
+     if ($('html').attr('class')=='shiny-busy') {
+       $('div.busy').show()
+     }
+   }, 1000)
+ } else {
+   $('div.busy').hide()
+ }
+}, 100) 
+
+
+</code></pre>
+And this is the css:<br />
+<br />
+<pre><code>
+div.busy { 
+ position:absolute;
+ top: 40%;
+ left: 50%;
+ margin-top: -100px;
+ margin-left: -50px;
+ display:none;
+ background: rgba(230, 230, 230, .8);
+ text-align: center;
+ padding-top: 20px;
+ padding-left: 30px;
+ padding-bottom: 40px;
+ padding-right: 30px;
+ border-radius: 5px;
+} 
+
+
+</code></pre>
+And here's the session:<br />
+<pre><code>
+sessionInfo()
+##R version 3.3.0 (2016-05-03)
+##Platform: x86_64-apple-darwin13.4.0 (64-bit)
+##Running under: OS X 10.10 (Yosemite)
+##
+##locale:
+##[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+##
+##attached base packages:
+##[1] stats graphics grDevices utils datasets methods base 
+##
+##other attached packages:
+##[1] dplyr_0.7.0 XML_3.98-1.9 DT_0.2 shinythemes_1.1.1 shiny_1.0.3 
+##
+##loaded via a namespace (and not attached):
+## [1] Rcpp_0.12.11 assertthat_0.2.0 digest_0.6.12 mime_0.5 R6_2.2.2 xtable_1.8-2 
+## [7] jsonlite_1.5 magrittr_1.5 rlang_0.1.1 tools_3.3.0 glue_1.1.1 htmlwidgets_0.8 
+##[13] httpuv_1.3.3 yaml_2.1.14 rsconnect_0.8 htmltools_0.3.6 tibble_1.3.3
+</code></pre>
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

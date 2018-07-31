@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-10-23T21:13:14JST">2017-10-23</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/10/clustering-rnaseq-data-using-k-means.html">Clustering RNAseq data using K-means: how many clusters?</a></h2>
+  </header>
+
+  
+<div class="article-body">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+
+<p>Note this is part two of a series on clustering RNAseq data. Check out <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one on hierarcical clustering here</a> and <a href="/2018/7/clustering-rnaseq-data-using-fuzzy-c.html">part three on fuzzy c-means clustering here</a>.</p>
+<p>Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated).</p>
+<p>The ‘correct’ method for clustering RNAseq data is a matter of perspective; it is the one that allows the researcher to make the most out of her data. Gene expression data is also full of noise which can make clustering tricky when using algorithms optimised for chunkier data. With that in mind it’s good to try several methods and compare them. In <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one</a> of this series we went through how to cluster RNAseq data using hierarchical clustering and using tree cutting. Here we will discuss how to use K-means clustering to cluster RNAseq data. We will also review methods to determine the optimum number of clusters.</p>
+<p>K-means clustering is fundamentally different from hierarchical clustering in that it is a form of partitional clustering in which the data are divied into K partitions. This requires <em>a priori</em> knowledge about the optimum number of partitions (clusters), thus the classic question ‘How do i determine the correct number of clusters?’ which we cover below. In K-means the data is seeded with K random datapoints. Then the data closest to those points are assigned to that ‘cluster’, the mean of those data is calculated and that mean becomes the new cluster center. The data are then re-assigned to their nearest point and the whole process repeats until the clusters are stable. Still confused? Check out this awesome gif from <a href="http://shabal.in/visuals.html">Andrey Shabalin</a>:
+<img border="0" data-original-height="400" data-original-width="400" src="http://shabal.in/visuals/kmeans/random.gif" />
+</p>
+<p>Let’s put this into practice. The first thing we need is some test data. Here I’m downloading a <a href="http://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html">summarized experitment</a> from the <a href="https://jhubiostatistics.shinyapps.io/recount/">recount project</a>. It describes MCF-7 cells treated with 10nM 17b-E2 for nine time points (5’, 10’, 20’, 40’, 80’, 160’, 320’, 640’ and 1280’). We then normalize in edgeR:</p>
+<pre class="r"><code>library(edgeR)
+library(SummarizedExperiment)
+load(url(&quot;http://duffel.rail.bio/recount/SRP049355/rse_gene.Rdata&quot;))
+counts &lt;- assays(rse_gene)$counts
+y &lt;- as.matrix((counts))
+y &lt;- DGEList(counts = y, group=c(1,2,3,4,5,6,7,8,9,10))
+y &lt;- calcNormFactors(y)
+z &lt;- cpm(y, normalized.lib.size=TRUE)</code></pre>
+<div id="should-you-filter-the-data" class="section level3">
+<h3>Should you filter the data?</h3>
+<p>Gene expression data is notoriously noisy. Since K-means is partitional clustering, it forces every gene into a cluster regardless of how well the data actually fit. Noisey genes can then be assigned to clusters even if their expression pattern isn’t representative of the cluster. For that reason I recommend filtering based on mean expression (drop low counts), variance, FC, or anything else to get rid of background genes. For this tutorial I am taking the most dynamically expressed genes, those which have the highest variance and expression. I am also only taking the last 6 timepoints since the first 4 weren’t that interesting when I first did this analysis (I wouldn’t do this for a real analysis!!):</p>
+<pre class="r"><code>#mean/variance calculations
+z_var &lt;- apply(z, 1, var)
+z_mean &lt;- apply(z, 1, mean)
+plot(log2(z_mean), log2(z_var), pch='.')
+abline(h=log2(50), col='red')
+abline(v=log2(50), col='red')
+text(x=13,y=23, labels=&quot;variance &gt; 50 &amp;\n mean &gt; 50&quot;, col='red')</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-Ub6hxE-BNco/We3CFQ9PzzI/AAAAAAAAKj8/cl73d5aztR4lp8fbPlhhvWPixHTzM8mhACLcBGAs/s1600/mean_var.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="400" src="https://2.bp.blogspot.com/-Ub6hxE-BNco/We3CFQ9PzzI/AAAAAAAAKj8/cl73d5aztR4lp8fbPlhhvWPixHTzM8mhACLcBGAs/s1600/mean_var.png" /></a></div>
+<pre class="r"><code>z &lt;- z[which(z_var &gt; 50 &amp; z_mean &gt; 50), 6:10]</code></pre>
+<p>The data we take is in the upper right hand corner.</p>
+<p>Before clustering we need to scale the data. This is so that we can identify clusters of genes that share similar expression profiles rather than similar expression levels.</p>
+<pre class="r"><code>scaledata &lt;- t(scale(t(z))) # Centers and scales data.</code></pre>
+<p>We can also cluster the samples to identify outliers:</p>
+<pre class="r"><code>hc &lt;- hclust(as.dist(1-cor(scaledata, method=&quot;spearman&quot;)), method=&quot;complete&quot;) # Clusters columns by Spearman correlation.
+TreeC = as.dendrogram(hc, method=&quot;average&quot;)
+plot(TreeC,
+     main = &quot;Sample Clustering&quot;,
+     ylab = &quot;Height&quot;)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-Vhq7I4VymoQ/We3CFdtgYdI/AAAAAAAAKj4/1onWv0w7nessUNFCzLyVmkjk5fGvemIZQCLcBGAs/s1600/sample_tree.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="400" src="https://2.bp.blogspot.com/-Vhq7I4VymoQ/We3CFdtgYdI/AAAAAAAAKj4/1onWv0w7nessUNFCzLyVmkjk5fGvemIZQCLcBGAs/s1600/sample_tree.png" /></a></div>
+<p>As you can see in general the samples cluster together by timepoint (SRRX0013 - SRRX0016 are enumerated in order of time).</p>
+</div>
+<div id="k-means-how-many-clusters" class="section level2">
+<h2>K-Means: How many clusters?</h2>
+<p>As discussed in the introduction, K-means clustering requires <em>a priori</em> knowledge of the number of clusters. The number of clusters can really impact the classifications so it’s an important consideration. <a href="https://shiny.rstudio.com/gallery/kmeans-example.html">Check out this example</a> from the shiny gallery to see how increasing the cluster number changes the resultant assignments. Cluster number designation is tricky business and for more info check out <a href="https://stackoverflow.com/questions/15376075/cluster-analysis-in-r-determine-the-optimal-number-of-clusters/15376462#15376462">this awesome stack overflow answer</a></p>
+<p>There are a few methods for evaluating the optimum number of clusters and we’ll see how they apply to our dataset below:</p>
+<div id="sse" class="section level3">
+<h3>SSE:</h3>
+<p>The first measure is using the sum of squared error (SSE). SSE is defined as the sum of the squared distance between each member of a cluster and its cluster centroid. We repeatedly test and increasing number of clusters and evaluate the SSE. As we increase the number of clusters the distance between any point and it’s centroid will be smaller since the cluster itself is smaller. At a certain number of clusters number however, the SSE will not significantly decrease with each new addition of a cluster. This is the elbow and suggests a suitable number of clusters:</p>
+<pre class="r"><code>wss &lt;- (nrow(scaledata)-1)*sum(apply(scaledata,2,var))
+for (i in 2:20) wss[i] &lt;- sum(kmeans(scaledata,
+                                     centers=i)$withinss)
+plot(1:20, wss, type=&quot;b&quot;, xlab=&quot;Number of Clusters&quot;,
+     ylab=&quot;Within groups sum of squares&quot;)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-M5rE13lEBgU/We3CEinpOpI/AAAAAAAAKjk/k8TIMBfTQHgNtNnz9O_925VfEfI-diZ7wCLcBGAs/s1600/SSE.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="340" data-original-width="500" src="https://3.bp.blogspot.com/-M5rE13lEBgU/We3CEinpOpI/AAAAAAAAKjk/k8TIMBfTQHgNtNnz9O_925VfEfI-diZ7wCLcBGAs/s1600/SSE.png" /></a></div>
+<p>So by this measure the optimum is <strong>4 clusters</strong></p>
+</div>
+<div id="average-silhouette-width" class="section level3">
+<h3>Average silhouette width:</h3>
+<p>The next method is by estimating the optimum number using the average silhouette width. The silhouette value describes how similar a gene is to its own cluster (cohesion) compared to other clusters (separation). A high value indicates that the gene is well placed. So if the average of all of these silhouettes is high then the number of clusters is good.</p>
+<pre class="r"><code>library(cluster)
+sil &lt;- rep(0, 20)
+#repeat k-means for 1:20 and extract silhouette:
+for(i in 2:20){
+  k1to20 &lt;- kmeans(scaledata, centers = i, nstart = 25, iter.max = 20)
+  ss &lt;- silhouette(k1to20$cluster, dist(scaledata))
+  sil[i] &lt;- mean(ss[, 3])
+}
+
+# Plot the  average silhouette width
+plot(1:20, sil, type = &quot;b&quot;, pch = 19, xlab = &quot;Number of clusters k&quot;, ylab=&quot;Average silhouette width&quot;)
+abline(v = which.max(sil), lty = 2)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-3RKpcxUDoh0/We3CEfp59mI/AAAAAAAAKjU/1CgbC0Gw1680gUsiknse4QiMijTbtm-CwCLcBGAs/s1600/AvgSi.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="500" src="https://2.bp.blogspot.com/-3RKpcxUDoh0/We3CEfp59mI/AAAAAAAAKjU/1CgbC0Gw1680gUsiknse4QiMijTbtm-CwCLcBGAs/s1600/AvgSi.png" /></a></div>
+<pre class="r"><code>cat(&quot;Average silhouette width optimal number of clusters:&quot;, which.max(sil), &quot;\n&quot;)</code></pre>
+<pre><code>## Average silhouette width optimal number of clusters: 2</code></pre>
+<p>So by this measure the optimum number is <strong>2 clusters</strong>. In my experience 2 clusters oversimplifies genes expression data as being either globally down or globally up which for us isn’t that interesting if we want the more interesting patterns. Note the <strong>3 clusters</strong> has approximately the same value.</p>
+</div>
+<div id="calinsky-criterion" class="section level3">
+<h3>Calinsky criterion:</h3>
+<p>The Calinski-Harabasz index is based on the intra and inter cluster sum of squares. So we are looking to maximize the index to find well separated clusters. To do this we repeatedly cluster the data then look how the genes partition themselves with increasing K:</p>
+<pre class="r"><code>library(vegan)
+fit &lt;- cascadeKM(scaledata, 1, 20, iter = 100)
+plot(fit, sortg = TRUE, grpmts.plot = TRUE)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-VqxNrNZ44Xs/We3CEQGAvAI/AAAAAAAAKjY/s2inI7G3E10JuFRVZAUjug0DHZ2vTQ-IwCLcBGAs/s1600/CHI.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="396" data-original-width="582" src="https://3.bp.blogspot.com/-VqxNrNZ44Xs/We3CEQGAvAI/AAAAAAAAKjY/s2inI7G3E10JuFRVZAUjug0DHZ2vTQ-IwCLcBGAs/s1600/CHI.png" /></a></div>
+<pre class="r"><code>calinski.best &lt;- as.numeric(which.max(fit$results[2,]))
+cat(&quot;Calinski criterion optimal number of clusters:&quot;, calinski.best, &quot;\n&quot;)</code></pre>
+<pre><code>## Calinski criterion optimal number of clusters: 2</code></pre>
+<p>Take a look at the plot on the left. It shows how each of the genes are partitioned with an increasing number of clusters. You can see how different sub structures develop as more clusters are added. On the right we see the maximum CH index is for <strong>2 clusters</strong> but also that the indices for <strong>3 and 4</strong> are still quite high so those are appropriate.</p>
+</div>
+<div id="gap-statistic" class="section level3">
+<h3>Gap statistic:</h3>
+<p>Next up is the gap statistic. The gap statistic comapres the log within-cluster sum of squares (discussed above) with it’s expectation under the null reference distribution. Then it chooses the cluster where the <em>gap</em> between the log(wss) and the maximim of the null ref is the largest:</p>
+<pre class="r"><code>library(cluster)
+set.seed(13)
+gap &lt;- clusGap(scaledata, kmeans, 20, B = 100, verbose = interactive())</code></pre>
+<pre class="r"><code>plot(gap, main = &quot;Gap statistic&quot;)
+abline(v=which.max(gap$Tab[,3]), lty = 2)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-Uo0kW4Ut-HA/We3CFOO-iSI/AAAAAAAAKjw/lfdAEhbi1Y0wqTjfcOfOPMi2Vj_kjWy-QCLcBGAs/s1600/gap.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="450" src="https://1.bp.blogspot.com/-Uo0kW4Ut-HA/We3CFOO-iSI/AAAAAAAAKjw/lfdAEhbi1Y0wqTjfcOfOPMi2Vj_kjWy-QCLcBGAs/s1600/gap.png" /></a></div>
+<p>You can see that <strong>6 clusters</strong> is the max but <strong>4,5,&amp;7</strong> are within a similar range.</p>
+</div>
+<div id="affinity-propogation" class="section level3">
+<h3>Affinity propogation:</h3>
+<p>This is a newer method of clustering that I must admit is a bit over my head. It uses representatives from the data called ‘exemplars’ to build the clusters in a way thats similar to partitioning around medoids. It doesn’t require designating a cluster number. You can read more <a href="http://science.sciencemag.org/content/315/5814/972">here</a></p>
+</br><p>Warning the heatmap takes forever to render. I have it commented here and include the image below:</p>
+<pre class="r"><code>library(apcluster)
+d.apclus &lt;- apcluster(negDistMat(r=2), scaledata)
+cat(&quot;affinity propogation optimal number of clusters:&quot;, length(d.apclus@clusters), &quot;\n&quot;)</code></pre>
+<pre><code>## affinity propogation optimal number of clusters: 70</code></pre>
+<pre class="r"><code>#uncomment the next line for the heatmap:
+#heatmap(d.apclus,cexRow=0, cexCol=0)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-4thqGmK4XqA/We27Y-wufaI/AAAAAAAAKjA/XbqpPlLGQn8oeEPJ19P6gNsEb0uAMFeNgCLcBGAs/s1600/affinity.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="582" data-original-width="582" src="https://1.bp.blogspot.com/-4thqGmK4XqA/We27Y-wufaI/AAAAAAAAKjA/XbqpPlLGQn8oeEPJ19P6gNsEb0uAMFeNgCLcBGAs/s1600/affinity.png" /></a></div>
+<p>You can see in the heatmap <strong>4 distinct clusters</strong>. The model however thinks there are <strong>70 clusters</strong> which is a bit absurd so I’m not sure about this method.</p>
+</div>
+<div id="hierarchical-clustering" class="section level3">
+<h3>Hierarchical Clustering:</h3>
+<p>It’s possible to use hierarchical clustering to provide insight into the optimum number of K clusters. The easiest way to do this is to perform the clustering then plot a heatmap and look for the clusters ‘by eye’.</p>
+<p>First the matrix:</p>
+<pre class="r"><code>#make the matrix
+dist &lt;- cor(t(scaledata), method=&quot;pearson&quot;)
+#make the tree
+hr &lt;- hclust(as.dist(1-dist), method=&quot;complete&quot;) # Cluster rows by Pearson correlation.</code></pre>
+<p>Now we can plot the resulting gene heatmap to see if we can pick out the clusters:</p>
+<pre class="r"><code>#draw the heatmap
+heatmap.2(dist,
+          Rowv=as.dendrogram(hr), 
+          Colv=as.dendrogram(hr),
+          scale=&quot;row&quot;,
+          margins = c(2, 2),
+          cexCol = 0.7,
+          labRow = F,
+          labCol = F,
+          main = &quot;Heatmap&quot;,
+          trace = &quot;none&quot;
+)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-VYy7gLanYhs/We27YzYekmI/AAAAAAAAKjE/8jdiIPoApkcnSKh37Ibf_9sXZ3ub6SqmQCLcBGAs/s1600/Hier.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="396" data-original-width="582" src="https://4.bp.blogspot.com/-VYy7gLanYhs/We27YzYekmI/AAAAAAAAKjE/8jdiIPoApkcnSKh37Ibf_9sXZ3ub6SqmQCLcBGAs/s1600/Hier.png" /></a></div>
+<p>We can see more or less <strong>4 clusters</strong> so this mostly agrees.</p>
+<p>It looks like between 3 and 4 clusters is optimal based on the different methods. For RNAseq data it’s certainly valid to examine higher cluster numbers to see more distinct profiles. Beware though at some point the profiles will become very redundant and the cluster assignments will be a bit ambiguous. Here we’ll continue with 4.</p>
+</div>
+</div>
+<div id="clustering-the-data" class="section level2">
+<h2>Clustering the data:</h2>
+<p>Let’s perform the actual clsutering using K=4:</p>
+<pre class="r"><code>set.seed(20)
+kClust &lt;- kmeans(scaledata, centers=4, nstart = 1000, iter.max = 20)
+kClusters &lt;- kClust$cluster</code></pre>
+<p>Now we can calculate the cluster ‘cores’ aka centroids:</p>
+<pre class="r"><code># function to find centroid in cluster i
+clust.centroid = function(i, dat, clusters) {
+  ind = (clusters == i)
+  colMeans(dat[ind,])
+}
+kClustcentroids &lt;- sapply(levels(factor(kClusters)), clust.centroid, scaledata, kClusters)</code></pre>
+<p>Plotting the centroids to see how they behave:</p>
+<pre class="r"><code>library(ggplot2)
+library(reshape)
+#get in long form for plotting
+Kmolten &lt;- melt(kClustcentroids)
+colnames(Kmolten) &lt;- c('sample','cluster','value')
+
+#plot
+p1 &lt;- ggplot(Kmolten, aes(x=sample,y=value, group=cluster, colour=as.factor(cluster))) + 
+  geom_point() + 
+  geom_line() +
+  xlab(&quot;Time&quot;) +
+  ylab(&quot;Expression&quot;) +
+  labs(title= &quot;Cluster Expression by Time&quot;,color = &quot;Cluster&quot;)
+p1</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-vppiuBWfXH4/We3CEyde4AI/AAAAAAAAKjo/WHmuWz6S55YRDIAb0EW3aeLaKB8iLwnCACLcBGAs/s1600/cores.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="396" data-original-width="582" src="https://3.bp.blogspot.com/-vppiuBWfXH4/We3CEyde4AI/AAAAAAAAKjo/WHmuWz6S55YRDIAb0EW3aeLaKB8iLwnCACLcBGAs/s1600/cores.png" /></a></div>
+<p>So we have some interesting cluster profiles! If you do this analysis and recover cores that have very similar expression consider reducing your K.</p>
+<p>An <em>a posteriori</em> means of cluster validation is to correlate the cluster centroids with each other. If the centroids are too similar then they will have a high correlation. If your K number produces clusters with high correlation (say above 0.85) then consider reducing the number of clusters.</p>
+<p>Correlate the medoids to see how similar they are:</p>
+<pre class="r"><code>cor(kClustcentroids)</code></pre>
+<pre><code>##            1          2           3           4
+## 1  1.0000000  0.3385156 -0.36325083 -0.87660675
+## 2  0.3385156  1.0000000 -0.84261807 -0.11389869
+## 3 -0.3632508 -0.8426181  1.00000000 -0.06415127
+## 4 -0.8766067 -0.1138987 -0.06415127  1.00000000</code></pre>
+<p>Our clusters are very distinct with a maximum correlation of 0.33 between cluster 1 and cluster 2.</p>
+<div id="using-a-cluster-score-to-identify-core-genes" class="section level3">
+<h3>Using a cluster score to identify core genes:</h3>
+<p>Calculating a membership score for clusters can help identify the <strong>core genes</strong> whose expression closely match the core. These genes might play a role in determining the expression of the cluster as a whole. These scores can also be used to <em>a posteriori</em> filter your genes if you want to drop genes that don’t fit well into any cluster.</p>
+<p>To calculate the scores for a single cluster, in this case 2 we’ll extract the core data for cluster 2, then subset the scaled data by <code>cluster =2</code>. Then, we’ll calculate the ‘score’ by correlating each gene with the cluster core. We can then plot the results for each gene with the core overlayed:</p>
+<pre class="r"><code>#Subset the cores molten dataframe so we can plot the core
+core2 &lt;- Kmolten[Kmolten$cluster==&quot;2&quot;,]
+
+#get cluster 2
+K2 &lt;- (scaledata[kClusters==2,])
+#calculate the correlation with the core
+corscore &lt;- function(x){cor(x,core2$value)}
+score &lt;- apply(K2, 1, corscore)
+#get the data frame into long format for plotting
+K2molten &lt;- melt(K2)
+colnames(K2molten) &lt;- c('gene','sample','value')
+#add the score
+K2molten &lt;- merge(K2molten,score, by.x='gene',by.y='row.names', all.x=T)
+colnames(K2molten) &lt;- c('gene','sample','value','score')
+#order the dataframe by score
+#to do this first create an ordering factor
+K2molten$order_factor &lt;- 1:length(K2molten$gene)
+#order the dataframe by score
+K2molten &lt;- K2molten[order(K2molten$score),]
+#set the order by setting the factors
+K2molten$order_factor &lt;- factor(K2molten$order_factor , levels = K2molten$order_factor)
+
+# Everything on the same plot
+p2 &lt;- ggplot(K2molten, aes(x=sample,y=value)) + 
+  geom_line(aes(colour=score, group=gene)) +
+  scale_colour_gradientn(colours=c('blue1','red2')) +
+  #this adds the core 
+  geom_line(data=core2, aes(sample,value, group=cluster), color=&quot;black&quot;,inherit.aes=FALSE) +
+  xlab(&quot;Time&quot;) +
+  ylab(&quot;Expression&quot;) +
+  labs(title= &quot;Cluster 2 Expression by Time&quot;,color = &quot;Score&quot;)
+p2</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-TCbm39-qeIs/We3CE2Xh8VI/AAAAAAAAKjs/FUCAa_5beKcm-UiKmfXaEGGVlsBjYKKXgCLcBGAs/s1600/c2.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="396" data-original-width="582" src="https://2.bp.blogspot.com/-TCbm39-qeIs/We3CE2Xh8VI/AAAAAAAAKjs/FUCAa_5beKcm-UiKmfXaEGGVlsBjYKKXgCLcBGAs/s1600/c2.png" /></a></div>
+<p>In this plot, genes with a profile close to the core have a score approaching 1 (red) while those with divergent patterns have a score closer to 0 (blue). You can see there is some noise but the genes mostly fit the data. If you observe many genes with low scores considering increasing your K as they’ve been ‘forced’ into a cluster in which they don’t belong. Too much noise in the data can also lead to low scoring genes.</p>
+</div>
+<div id="comparing-cluster-methods" class="section level3">
+<h3>Comparing cluster methods:</h3>
+<p>Let’s see how this compares to hierarchical clustering!</p>
+<p>Now if you’ve been following since <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one</a> on hierarchical clustering you might remember we can cut the tree and recover a pre-determined number of clusters (rather than cutting the tree based on height). We do that here asking for 4 clusters to compare to the K-means:</p>
+<pre class="r"><code>#we made the hr and TreeR objects above.
+hclustk4 = cutree(hr, k=4) #cut tree to find 4 clusters
+library(dendextend)
+TreeR = as.dendrogram(hr, method=&quot;complete&quot;)
+plot(TreeR,
+     leaflab = &quot;none&quot;,
+     main = &quot;Gene Clustering&quot;,
+     ylab = &quot;Height&quot;)
+#this plots the bar below:
+colored_bars(hclustk4, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c(&quot;k=4&quot;),cex.rowLabels=0.7)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-RIeKFunJ7CY/We3CEbLwt5I/AAAAAAAAKjc/j72M9ES9op4wg3VQz_NwGApZq4PgtR3kQCLcBGAs/s1600/Hclust.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="500" src="https://2.bp.blogspot.com/-RIeKFunJ7CY/We3CEbLwt5I/AAAAAAAAKjc/j72M9ES9op4wg3VQz_NwGApZq4PgtR3kQCLcBGAs/s1600/Hclust.png" /></a></div>
+<p>Looks reasonable since the clusters re-group the main branches.</p>
+<p>Now let’s see how the K-means cluster assignments line up with the hierarchical clustering.</p>
+<pre class="r"><code>plot(TreeR,
+     leaflab = &quot;none&quot;,
+     main = &quot;Gene Clustering&quot;,
+     ylab = &quot;Height&quot;)
+the_bars &lt;- cbind(hclustk4, kClusters)
+colored_bars(the_bars, TreeR, sort_by_labels_order = T, y_shift=-0.1, rowLabels = c(&quot;Treecut&quot;,'K-means'),cex.rowLabels=0.7)</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-wFWOJBCPB4k/We3CEnPKXVI/AAAAAAAAKjg/ASI4ZPosBWMHtLz5sYkxWUNdeJFRF4iRwCLcBGAs/s1600/Kclust.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="500" src="https://2.bp.blogspot.com/-wFWOJBCPB4k/We3CEnPKXVI/AAAAAAAAKjg/ASI4ZPosBWMHtLz5sYkxWUNdeJFRF4iRwCLcBGAs/s1600/Kclust.png" /></a></div>
+<p>We observe some differences especially along the longer branches but the lower branches correspond well.</p>
+<p>One last comparison, and this can be applied to looking at any set of cluster assignments, is to check for cluster membership overlap. This will compare the genes which comprise each cluster in one set of clusters and show us if they also make cluster together in a second set. Well matched clusters between assignments will have many overlapping genes. This is also a good way to identify analagous cluster assignments in two sets of clusters. Here we’ll compare the assignments from hierarchical clustering to the K-means assignments and see how they line up:</p>
+<pre class="r"><code>#these functions from the WCGNA package are great for this:
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/matchLabels.R')
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/accuracyMeasures.R')
+hclustk4 &lt;- paste0('H-',hclustk4)
+kClusters &lt;- paste0('K-',kClusters)
+OT&lt;- overlapTable(hclustk4, kClusters)
+#get rid of 0 values...
+OT$pTable[OT$pTable == 0] &lt;- 2e-300
+
+textMatrix= paste(signif(OT$countTable, 2), &quot;\n(&quot;,
+                      signif(OT$pTable, 1), &quot;)&quot;, sep= &quot;&quot;)
+dim(textMatrix)= dim(OT$countTable)
+par(mar=c(10,10,10,10))
+library(gplots)
+heatmap.2(x= -log(OT$pTable),
+          dendrogram = &quot;none&quot;,
+          Colv =F,
+          Rowv = F,
+          scale = c(&quot;none&quot;),
+          col=&quot;heat.colors&quot;,
+          na.rm=TRUE,
+          cellnote = textMatrix,
+          notecol=&quot;grey30&quot;,
+          notecex=0.6,
+          trace=c(&quot;none&quot;),
+          cexRow = 0.8,
+          cexCol = 0.8,
+          main = &quot;Cluster-Cluster Overlap&quot;,
+          xlab = &quot;K-means (k=3)&quot;,
+          ylab = &quot;TreeCut (k=3)&quot;)</code></pre>
+<a href="https://1.bp.blogspot.com/-fhbyAIt-pYs/We3CFHfAFiI/AAAAAAAAKj0/Uvv4M0ZN0rkeRtCrcotevqdk_H-5JcIIwCLcBGAs/s1600/heat_OT.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="400" data-original-width="500" src="https://1.bp.blogspot.com/-fhbyAIt-pYs/We3CFHfAFiI/AAAAAAAAKj0/Uvv4M0ZN0rkeRtCrcotevqdk_H-5JcIIwCLcBGAs/s1600/heat_OT.png" /></a></div>
+<p>You can see there’s a near perfect agreement with K-3 and H-4, then there is some discord in how the two algorithms assigned the other two clusters. Nonetheless the global groupings are still comparable.</p>
+<p>All in all, choosing the optimal number of clusters is more of an art than an exact science. <strong>Especially</strong> when considering RNAseq data. It really comes down to what you want to see in the data: global profiles or small bunches of co-expressed genes being the two extremes. The main takeaways here are:</p>
+<ol style="list-style-type: decimal">
+<li>Use multiple algorithms and comapre them.</li>
+<li>Use the strategies above (SSE, CH index, Gap statistic) to guide the analysis then:</li>
+<li>Compare results from multiple K numbers.</li>
+<li>If your profiles become too redundant when you plot the centroids, use a smaller K.</li>
+<li>If when plotting the profiles of individual genes you see outliers that don’t fit, use a larger K.</li>
+<li>Consider filtering the data based on mean and variance to exclude noise.</li>
+</ol>
+</br><p>Hope this helps! Check out <a href="/2018/7/clustering-rnaseq-data-using-fuzzy-c.html">part three on fuzzy c-means clustering here</a></p>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.0 (2016-05-03)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X 10.10 (Yosemite)
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats4    parallel  stats     graphics  grDevices utils     datasets 
+## [8] methods   base     
+## 
+## other attached packages:
+##  [1] gplots_3.0.1               dendextend_1.5.2          
+##  [3] reshape_0.8.6              ggplot2_2.2.1             
+##  [5] apcluster_1.4.3            vegan_2.4-3               
+##  [7] lattice_0.20-35            permute_0.9-4             
+##  [9] cluster_2.0.6              SummarizedExperiment_1.2.3
+## [11] Biobase_2.32.0             GenomicRanges_1.24.3      
+## [13] GenomeInfoDb_1.8.7         IRanges_2.6.1             
+## [15] S4Vectors_0.10.3           BiocGenerics_0.18.0       
+## [17] edgeR_3.14.0               limma_3.28.21             
+## 
+## loaded via a namespace (and not attached):
+##  [1] gtools_3.5.0       modeltools_0.2-21  kernlab_0.9-25    
+##  [4] colorspace_1.3-2   htmltools_0.3.6    viridisLite_0.2.0 
+##  [7] yaml_2.1.14        mgcv_1.8-17        rlang_0.1.2       
+## [10] prabclus_2.2-6     fpc_2.1-10         plyr_1.8.4        
+## [13] robustbase_0.92-7  stringr_1.2.0      zlibbioc_1.18.0   
+## [16] munsell_0.4.3      gtable_0.2.0       caTools_1.17.1    
+## [19] mvtnorm_1.0-6      evaluate_0.10      labeling_0.3      
+## [22] knitr_1.16         flexmix_2.3-14     class_7.3-14      
+## [25] DEoptimR_1.0-8     trimcluster_0.1-2  Rcpp_0.12.12      
+## [28] KernSmooth_2.23-15 scales_0.4.1       backports_1.1.0   
+## [31] diptest_0.75-7     gdata_2.18.0       XVector_0.12.1    
+## [34] gridExtra_2.2.1    digest_0.6.12      stringi_1.1.5     
+## [37] grid_3.3.0         rprojroot_1.2      bitops_1.0-6      
+## [40] tools_3.3.0        magrittr_1.5       lazyeval_0.2.0    
+## [43] tibble_1.3.3       whisker_0.3-2      MASS_7.3-47       
+## [46] Matrix_1.2-10      rmarkdown_1.6      viridis_0.4.0     
+## [49] mclust_5.3         nnet_7.3-12        nlme_3.1-131</code></pre>
+</div>
+</div>
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

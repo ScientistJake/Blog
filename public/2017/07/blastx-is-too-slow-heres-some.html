@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-07-14T21:13:14JST">2017-07-14</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/07/blastx-is-too-slow-heres-some.html">BLASTx is too slow! Here's some alternatives.</a></h2>
+  </header>
+
+  
+  <div class="article-body">
+  BLASTx has long been the gold standard for nucleotide ~ amino acid alignments. For most applications it works very well. In some cases though, like aligning thousands of sequences to the non-redunant (nr) database, it is just too slow. If you're facing this problem there are a couple of ways to speed up BLASTx. You can increase the -word_size option for a marginal speedup with little lose of sensitivity. You can increase the <code>-num_threads</code> option for a decent speedup. Finally you can&nbsp; cut your query into many chunks and run them all in parallel giving a more linear speedup over simply increasing the number of threads.<br />
+<br />
+If none of that works you can turn to an alternative BLAST-like tool. Today we are comparing <a href="https://plast.inria.fr/">PLAST</a>, a command line tool that promises significant accelartion over BLAST, and <a href="https://github.com/bbuchfink/diamond">DIAMOND</a>, a tool that brags up to a 20,000x speed up over BLAST. I routinely have to BLAST large numbers of sequences (transcriptomes) to large databases (nr, Trembl) so these tools immediately piqued my interest. Which one is better though? And are they just as good as BLAST? Only one way to find out:<br />
+<br />
+Let's race em!<br />
+<br />
+<h2>
+The Race:</h2>
+As a query I am using a random set of 1369 sequences generated from a Trinity assembly. I knew 
+that many of these had no BLASTx hit from a previous run so they'd make a 
+good 'challenge' for the programs.<br />
+The overall stats on the query file are as follows:<br />
+</br>
+Sequences:        1,369<br />
+Mean_length:      349<br />
+Median_length:    275<br />
+Min_length:       201<br />
+Max_length:       2,460<br />
+</br>
+For a database I am using a local copy of Trembl which although not as large as nr is still quite formidable.<br />
+</br>
+One annoyance I encountered with DIAMOND is that I had to make a separate database file for it:<br />
+</br>
+<pre><code>
+/scripts/diamond/./diamond makedb --in ~/dbs/uniprot_trembl.fasta -d ~/dbs/trembl 
+
+</code></pre>
+PLAST on the other hand works with a database generated with NCBI's makeblastdb command. You provide the .pal file to PLAST. <br />
+</br>
+Setting up equivalent calls was pretty straightforward except for a parameter unique to PLAST (the seed use ratio) and a parameter unique to DIAMOND (<code>--more_sensitive</code> option). Both were set to the most sensitive. Here's the calls for each program:<br />
+</br>
+<pre><code>
+#DIAMOND blastx 
+date ;
+/scripts/diamond/./diamond blastx \
+-d ~/dbs/trembl \
+-q ~/test_race.fa \
+--threads 8 \
+--more-sensitive \
+--out test_race.diamonblastx.txt \
+--outfmt 6 \
+--max-target-seqs 10 \
+--evalue 0.00005 \
+--max-hsps 1 ;
+date 
+
+#PLASTx
+date ;
+/scripts/plastbinary_linux_20160121/scripts/../build/bin/plast \
+-p plastx \
+-d ~/dbs/trembl.pal \
+-i ~/test_race.fa \
+-o /home/jwarner/test_race.plastx.txt \
+-e 5e-5 -a 8 \
+-max-hsp-per-hit 1 \
+-max-hit-per-query 10 \
+-seeds-use-ratio 100 \
+-outfmt 1 \
+-force-query-order 1000 \
+-bargraph ;
+date 
+
+#BLASTx
+date ; 
+blastx \
+-query ~/test_race.fa \
+-db ~/dbs/trembl \
+-out /home/jwarner/test_race.blastx.txt&nbsp; -outfmt 6 -evalue 0.00005 \
+-max_target_seqs 10 -max_hsps 1 -num_threads 8 ;
+date
+</code></pre>
+</br>
+And the winner is...<br />
+</br>
+<h2>Results:</h2>
+The results can be binned into two categories: Alignment time and sensitivity. <br />
+<h3>Alignment Time:</h3>
+Both DIAMOND and PLAST are orders of magnitude faster than BLAST, clocking in at 346 and 202 minutes respectively. Compared to 1474 minutes for the BLAST that is some serious computational time savings. Good to see since this speed up is the raison d'être for these alternative programs. <br />
+<div class="separator" style="text-align: center;">
+<a href="https://1.bp.blogspot.com/-0MNPfKgrDgU/WVtq1Bngu-I/AAAAAAAAJR0/E4WHPIOJAEY88shOd85Y8bPn7BO1cnKfACLcBGAs/s1600/Blast_Race_Time.png" imageanchor="1" ><img border="0" data-original-height="556" data-original-width="991" height="359" src="https://1.bp.blogspot.com/-0MNPfKgrDgU/WVtq1Bngu-I/AAAAAAAAJR0/E4WHPIOJAEY88shOd85Y8bPn7BO1cnKfACLcBGAs/s640/Blast_Race_Time.png" width="640" /></a></div>
+<h3>Sensitivity:</h3>
+</br>
+As a proxy for sensitivity, I examined two metrics. The total number of hits found by each program and the number of queries with at least one hit. We can see that in both cases BLASTx is the most sensitive, followed by PLASTx and then DIAMOND.<br />
+</br>
+<div class="separator" style="text-align: center;">
+<a href="https://1.bp.blogspot.com/-s-crVTuHHpI/WVtq1It4GTI/AAAAAAAAJR4/kKdyTYMFl-gY6QBwOG3lX2RwKPstM8BkwCLcBGAs/s1600/Blast_Race_Total%25281%2529.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="556" data-original-width="991" height="356" src="https://1.bp.blogspot.com/-s-crVTuHHpI/WVtq1It4GTI/AAAAAAAAJR4/kKdyTYMFl-gY6QBwOG3lX2RwKPstM8BkwCLcBGAs/s640/Blast_Race_Total%25281%2529.png" width="640" /></a></div>
+<div class="separator" style="text-align: center;">
+<a href="https://2.bp.blogspot.com/-8CDEOPnPKW8/WVttOm-8glI/AAAAAAAAJSA/jKwDZFgrhy8KGKz1WIliCLlMiCp6d-rbACLcBGAs/s1600/Blast_Race_Total%25282%2529.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="556" data-original-width="991" height="358" src="https://2.bp.blogspot.com/-8CDEOPnPKW8/WVttOm-8glI/AAAAAAAAJSA/jKwDZFgrhy8KGKz1WIliCLlMiCp6d-rbACLcBGAs/s640/Blast_Race_Total%25282%2529.png" width="640" /></a></div>
+<div class="separator" style="text-align: left;">
+</div>
+<h2>
+Conclusion:</h2>
+While BLASTx is still the gold standard for sensitivity it's incredibly long alignment times make it a major bottleneck when many thousands of sequences need to be aligned. This is a serious consideration when we are for example annotating a large transcriptome (our last assembly was over 200,000 sequences). Both PLAST and DIAMOND provide a major run-time advantage without a considerable loss of sensitivity.<br />
+</br>
+In a head to head of PLAST and DIAMOND, PLAST is the clear winner both in terms of speed and sensitivity. Besides this, I found PLAST preferable for three primary reasons:<br />
+</br>
+<ol>
+<li>PLAST allows for finer tuning of sensitivity versus speed by modifying the seed use ratio.</li>
+<li>PLAST is compatible with databases created using BLAST's makeblastdb command.</li>
+<li>PLAST supports the entire blast family. DIAMOND only includes blastp and blastx.</li>
+</ol>
+The second point is especially important if you maintain a local copy of NCBI's nr and update it with update_blastdb.pl or something similar. There's other reasons to like PLAST, for example their <code>-bargraph</code> option which estimates the remaining run time is nice.<br />
+<br />
+In any event both tools provide a (much) faster alternative to BLAST and are certainly worth considering the next time a big annotation project comes down the pipe.<br />
+<br />
+References:<br />
+<ol>
+<li> B. Buchfink, Xie C., D. Huson, "Fast and sensitive protein alignment using DIAMOND", Nature Methods 12, 59-60 (2015).</li>
+<li>Nguyen VH, Lavenier D. (2009) PLAST: parallel local alignment search 
+tool for database comparison. BMC Bioinformatics, vol 10, no 329. </li>
+</ol>
+  </div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-12-21T21:13:14JST">2017-12-21</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/12/clickable-volcano-plots-in-shiny.html">Clickable Volcano Plots in Shiny!</a></h2>
+  </header>
+
+<div class="article-body>  
+<div class="section level2" id="clickable-volcano-plots-and-clickable-ma-plots-using-ggplot-and-shiny">
+<h2>
+Clickable volcano plots (and clickable MA plots) using ggplot and shiny!</h2>
+One of the goals of any bioinformatics project is to distill a large amount of data into an easily digestable graphic or table. Examples are the volcano plot, and it’s cousin the MA plot, which are used to represent the results of a differential expression test. Volcano plots show fold chance as a function of pvalue/FDR while the MA plot shows fold change as a function of expression. These plots are paradoxical in that they are both simulataneously incredibly useful and completely worthless. They’re useful because with just a glance we can quickly pick out genes that are up or down in a given comparison e.g.&nbsp;treatment versus control. They’re worthless because aside from the most highly up or down points we have no idea what those genes are!<br />
+
+These plot are much much more useful when theyre <em>interactive.</em> Enter shiny! Let’s make a clickable volcano plot where the user can click points and get the gene information from them. First we will download some data and perform a simple DEtest. The data is from <a href="https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP043078">BCL6-depleted OCI-LY1 cells rescued with either WT or RD mutant BCL6 (N=3 for each group)</a> and downloaded from the <a href="https://jhubiostatistics.shinyapps.io/recount/">recount project.</a><br />
+
+<pre class="r"><code>library(edgeR)
+library(SummarizedExperiment)
+
+#get the data from recount
+load(url("http://duffel.rail.bio/recount/SRP043078/rse_gene.Rdata"))
+counts &lt;- assays(rse_gene)$counts
+
+#get the phenotypic data
+phenotypes &lt;- read.table(file='http://duffel.rail.bio/recount/SRP043078/SRP043078.tsv',header=T, sep='\t',fill=T)
+
+#edgeR block for normalization and DE testing:
+y &lt;- as.matrix((counts))
+#the last three samples are the mutants (see pheno data)
+y &lt;- DGEList(counts = y, group=c('WT','WT','WT','mut','mut','mut'))
+y &lt;- calcNormFactors(y)
+y &lt;- estimateCommonDisp(y)
+y &lt;- estimateTagwiseDisp(y)
+#This is the DE test:
+de.WT.mut &lt;- exactTest(y, pair=c('WT','mut'))
+tags.de.WT.mut &lt;- data.frame(topTags(de.WT.mut, n=(58037)))</code></pre>
+Now we have the results of the DE test with logFC of wildtype versus mutant, pvalue for the test, expression of the gene as logCPM, and the corrected pvalue expressed as the FDR.<br />
+
+<pre class="r"><code>head(tags.de.WT.mut)</code></pre>
+<pre><code>##                        logFC   logCPM        PValue           FDR
+## ENSG00000170989.8   6.286462 3.949995 3.588356e-159 2.082574e-154
+## ENSG00000121440.14 -4.895898 2.652711 1.244436e-138 3.611166e-134
+## ENSG00000106624.9   4.807209 3.067900 5.623195e-135 1.087845e-130
+## ENSG00000067798.14  4.741035 3.468668 3.007754e-132 4.364025e-128
+## ENSG00000116299.16  4.555373 2.736529 3.055612e-124 3.546771e-120
+## ENSG00000144711.13  4.463181 3.795915 1.374557e-120 1.329586e-116</code></pre>
+We have everything we need to make a volcano plot. First, we add one column to the dataframe to indicate significantly DE expressed genes. This will be used by ggplot to color the significant points. You can use whatever threshold you like but here we use logFC &gt; 2 and FDR &lt; 0.05. We also add a column to calculate the negative log of the FDR so it all fits nicely on the plot:<br />
+
+<pre class="r"><code># significant is coded as TRUE, not sig as FALSE
+tags.de.WT.mut$sig &lt;- as.factor(abs(tags.de.WT.mut$logFC) &gt; 2 &amp; tags.de.WT.mut$FDR &lt; 0.05)
+#convert FDR to -log(FDR)
+tags.de.WT.mut$negLogFDR &lt;- -log10(tags.de.WT.mut$FDR)
+#save for later:
+write.table(tags.de.WT.mut, file="tags.de.WT.mut.txt", row.names = T, sep='\t', quote=F)</code></pre>
+Now we’re all set for ggplot. Here’s the volcano:<br />
+
+<pre class="r"><code>library(ggplot2)
+ggplot(tags.de.WT.mut,aes(x=logFC, y=negLogFDR, color=sig)) +
+  geom_point() +
+  coord_cartesian() +
+  ylab("-log10 FDR") +
+  xlab("log2 fold change")</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-CyvUykIPbM0/WjuZ7xV8CjI/AAAAAAAALQY/CpcCy4vHiX8zu0UQ6FuTyRDuRk0EnuiNwCLcBGAs/s1600/Volcano.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="396" data-original-width="661" height="191" src="https://2.bp.blogspot.com/-CyvUykIPbM0/WjuZ7xV8CjI/AAAAAAAALQY/CpcCy4vHiX8zu0UQ6FuTyRDuRk0EnuiNwCLcBGAs/s320/Volcano.png" width="320" /></a></div>
+<br />
+And here’s the MA:<br />
+
+<pre class="r"><code>ggplot(tags.de.WT.mut,aes(x=logCPM, y=logFC, color=sig)) +
+  geom_point() +
+  coord_cartesian() +
+  ylab("log2 FC") +
+  xlab("log2 CPM")</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-0erl6vpWZQI/WjuZ7_fEEWI/AAAAAAAALQc/6xYqwz23K-slnp6x5hECQH47f5WGHhshACLcBGAs/s1600/MA.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="396" data-original-width="661" height="191" src="https://3.bp.blogspot.com/-0erl6vpWZQI/WjuZ7_fEEWI/AAAAAAAALQc/6xYqwz23K-slnp6x5hECQH47f5WGHhshACLcBGAs/s320/MA.png" width="320" /></a></div>
+<br />
+These plots are a great way to see in general how many genes are up or down in a given experiment. Aside from possibly adding labels a few points they tell us very little about <em>which</em> genes are up or down. So let’s make a shiny app to interact with the results.<br />
+
+The following assumes at least a cursory knowledge of shiny. We’ll set up an extremely basic interface which just has the a select bar for the DE test, the plot, and slider for filtering the results. For the volcano plot, we can filter using CPM therefore combining the useable information from both the volcano and MA plots into one awesome interactive volcano plot.<br />
+
+<pre class="r"><code>library(shiny)
+
+# Define UI for application that draws a histogram
+ui &lt;- shinyUI(fluidPage(
+  h1("Clickable Volcano Plots!"),
+  selectInput('inputFile', label='select a file:',choice='WT.mut'),
+  plotOutput('volcanoPlot',click='plot_click'),
+  sliderInput('cpmCut', label="log(CPM) cutoff",0,10,0, width="200px")
+))</code></pre>
+The server side logic is also simple. We create reactive objects for the file name, dataframe, and plot.<br />
+
+<pre class="r"><code>server &lt;- function(input, output, session){
+  
+  #read in the table as a function of the select input
+  dataFrame &lt;- reactive({
+    filename &lt;- paste0("tags.de.",input$inputFile,".txt")
+    read.table(file=filename, header=T, sep='\t')
+  })
+  
+  # filter the table by CPM:
+  dataFilter &lt;- reactive({
+    dataFrame()[dataFrame()$logCPM &gt; input$cpmCut,]
+  })
+  
+  #plot it normally with ggplot:
+  output$volcanoPlot &lt;- renderPlot({ 
+    ggplot(dataFilter(),aes(x=logFC, y=negLogFDR, color=sig)) +
+      geom_point() +
+      coord_cartesian() +
+      ylab("-log10 FDR") +
+      xlab("log2 fold change")
+  })
+}</code></pre>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-uJ18Id5NY4I/WjuZ8froKlI/AAAAAAAALQg/r1d7pJ8X-NMhXj2v0ie4NecXAOLyYQAcQCLcBGAs/s1600/clikcableVolcano.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="652" data-original-width="605" height="320" src="https://3.bp.blogspot.com/-uJ18Id5NY4I/WjuZ8froKlI/AAAAAAAALQg/r1d7pJ8X-NMhXj2v0ie4NecXAOLyYQAcQCLcBGAs/s320/clikcableVolcano.png" width="296" /></a></div>
+<br />
+
+<div class="section level2" id="making-the-plot-clickable">
+<h2>
+Making the plot clickable!</h2>
+So now that our app is working nicely we can make it clickable. In the ui we add a data table to output the results of the click:<br />
+
+<pre class="r"><code># Define UI for application that draws a histogram
+ui &lt;- shinyUI(fluidPage(
+  h1("Clickable Volcano Plots!"),
+  selectInput('inputFile', label='select a file:',choice='WT.mut'),
+  plotOutput('volcanoPlot',click='plot_click'),
+  sliderInput('cpmCut', label="log(CPM) cutoff",-10,10,-10, width="200px"),
+  
+  #here the table for the clicked points:
+  tableOutput('clickedPoints')
+))</code></pre>
+Then on the server side we add the logic to caputre the points. We do this with the <code>nearPoints</code> function:<br />
+
+<pre class="r"><code>server &lt;- function(input, output, session){
+  
+  #read in the table as a function of the select input
+  dataFrame &lt;- reactive({
+    filename &lt;- paste0("tags.de.",input$inputFile,".txt")
+    read.table(file=filename, header=T, sep='\t')
+  })
+  
+  # filter the table by CPM:
+  dataFilter &lt;- reactive({
+    dataFrame()[dataFrame()$logCPM &gt; input$cpmCut,]
+  })
+  
+  #plot it normally with ggplot:
+  output$volcanoPlot &lt;- renderPlot({ 
+    ggplot(dataFilter(),aes(x=logFC, y=negLogFDR, color=sig)) +
+      geom_point() +
+      coord_cartesian() +
+      ylab("-log10 FDR") +
+      xlab("log2 fold change")
+  })
+  
+  #get the clicked points!
+  clicked &lt;- reactive({
+    # We need to tell it what the x and y variables are:
+    nearPoints(dataFilter(), input$plot_click, xvar = "logFC", yvar = "negLogFDR")
+  })
+  
+  #output those points into a table
+  
+  output$clickedPoints &lt;- renderTable({
+    clicked()
+  }, rownames = T)
+}</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-L991MbwcYtE/WjuZ83At25I/AAAAAAAALQo/ykOryBsEohstU1dejc8nwHq5QU2CKTWwwCEwYBhgL/s1600/volcanoClick.gif" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="822" data-original-width="546" src="https://1.bp.blogspot.com/-L991MbwcYtE/WjuZ83At25I/AAAAAAAALQo/ykOryBsEohstU1dejc8nwHq5QU2CKTWwwCEwYBhgL/s1600/volcanoClick.gif" /></a></div>
+<br />
+Et voila! Now you can share the plots with colaborators and labmates for easy differential expression exploration! You could spiff things up even more by letting users click and drag to select points. To do this add <code>brush=plot_brush</code> to the <code>plotOuput</code> function and add the appropriate logic on the server side.<br />
+
+Here’s the code for making a clickable MA plots. Exatcly the same with slight modification to the plot and clicked function:<br />
+
+<pre class="r"><code>server &lt;- function(input, output, session){
+  
+  #read in the table as a function of the select input
+  dataFrame &lt;- reactive({
+    filename &lt;- paste0("tags.de.",input$inputFile,".txt")
+    read.table(file=filename, header=T, sep='\t')
+  })
+  
+  # filter the table by CPM:
+  dataFilter &lt;- reactive({
+    dataFrame()[dataFrame()$logCPM &gt; input$cpmCut,]
+  })
+  
+  #plot it normally with ggplot:
+  output$volcanoPlot &lt;- renderPlot({ 
+    ggplot(dataFilter(),aes(x=logCPM, y=logFC, color=sig)) +
+     geom_point() +
+     coord_cartesian() +
+     ylab("log2 FC") +
+     xlab("log2 CPM")
+  })
+  
+  #get the clicked points!
+  clicked &lt;- reactive({
+    # We need to tell it what the x and y variables are:
+    nearPoints(dataFilter(), input$plot_click, xvar = "logCPM", yvar = "logFC")
+  })
+  
+  #output those points into a table
+  output$clickedPoints &lt;- renderTable({
+    clicked()
+  }, rownames = T)
+}</code></pre>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-W6y7iRi6E6M/WjuZ7oK5anI/AAAAAAAALQo/NFx117JCglkwiTs6_s0bwQJBKZGFfzsMgCEwYBhgL/s1600/MAclick.gif" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" data-original-height="786" data-original-width="528" src="https://4.bp.blogspot.com/-W6y7iRi6E6M/WjuZ7oK5anI/AAAAAAAALQo/NFx117JCglkwiTs6_s0bwQJBKZGFfzsMgCEwYBhgL/s1600/MAclick.gif" /></a></div>
+With the MA plot it could be better with a different slider for pVlaue instead of CPM.<br />
+
+Tune in next time and we will try this whole thing again using plotly!<br />
+
+<div class="section level3" id="session">
+<h3>
+session:</h3>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.0 (2016-05-03)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X 10.10 (Yosemite)
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats4    parallel  stats     graphics  grDevices utils     datasets 
+## [8] methods   base     
+## 
+## other attached packages:
+##  [1] shiny_1.0.5                SummarizedExperiment_1.2.3
+##  [3] Biobase_2.32.0             GenomicRanges_1.24.3      
+##  [5] GenomeInfoDb_1.8.7         IRanges_2.6.1             
+##  [7] S4Vectors_0.10.3           BiocGenerics_0.18.0       
+##  [9] edgeR_3.14.0               limma_3.28.21             
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.14    knitr_1.17      XVector_0.12.1  magrittr_1.5   
+##  [5] zlibbioc_1.18.0 xtable_1.8-2    R6_2.2.2        stringr_1.2.0  
+##  [9] tools_3.3.0     htmltools_0.3.6 yaml_2.1.16     rprojroot_1.3-1
+## [13] digest_0.6.13   mime_0.5        evaluate_0.10.1 rmarkdown_1.8  
+## [17] stringi_1.1.6   backports_1.1.2 httpuv_1.3.5</code></pre>
+</div>
+</div>
+
+</div>
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+  <meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+
+  <link rel="canonical" href="/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>2-BitBio</title>
+    
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-111736277-3');
+  </script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    
+
+    <ul class="p-articles">
+      
+      <li><article class="li">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2017-05-11T21:13:14JST">2017-05-11</time></li>
+      
+    </ul>
+    <h2 class="title"><a href="/2017/05/formula-1-plotting-app-with-shiny.html">Formula 1 plotting app with Shiny!</a></h2>
+  </header>
+
+  
+<div class="article-body" id="just-for-fun">
+<h2>
+Just for fun…</h2>
+No work today but it’s raining out so I decided to make a web plotter that plots Formula 1 historical results using shiny. Since this isn’t bioinformatics related I won’t go through the code as I normally would but I did comment on it inline below for those who want to follow along.<br />
+
+You can check out the plotter <a href="https://f1.2-bitbio.com/Shiny_F1">here</a> or run it by copying and pasting the code below into the R terminal.<br />
+
+I will point out one neat feature: the ggplot add-on package emoGG. As the name suggests this package lets you use emojis in place of the normal shapes when plotting in ggplot. It’s easy to use. You simply search for the emoji using keywords:<br />
+
+<pre class="r"><code>library(emoGG)
+emoji_search("trophy")</code></pre>
+<pre><code>##       emoji  code  keyword
+## 1612 trophy 1f3c6      win
+## 1613 trophy 1f3c6    award
+## 1614 trophy 1f3c6  contest
+## 1615 trophy 1f3c6    place
+## 1616 trophy 1f3c6      ftw
+## 1617 trophy 1f3c6 ceremony
+## 3102      o  2b55   circle
+## 3103      o  2b55    round</code></pre>
+Then use the emoji code when calling ‘geom_emoji()’. Below is a plot from the app (you can see the code below). You can see I’ve added a layer with trophy emojis for Daniel Ricciardo’s first place finishes:<br />
+
+<a href="https://1.bp.blogspot.com/-GLbyBj9DRbc/WRSiGOjnp5I/AAAAAAAAIj0/NJ6GhjuYoxQxamTtSQb9oiB5SgO6nBPvACLcB/s1600/Rplot.png" imageanchor="1"><img border="0" src="https://1.bp.blogspot.com/-GLbyBj9DRbc/WRSiGOjnp5I/AAAAAAAAIj0/NJ6GhjuYoxQxamTtSQb9oiB5SgO6nBPvACLcB/s1600/Rplot.png" /></a>
+Anyway enjoy the app (if you’re a Formula 1 fan). Here’s the code for it:<br />
+
+<pre class="r"><code>library(RCurl)
+library(httr)
+library(XML)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(emoGG)
+
+#set up the server side
+server &lt;- function(input, output) {
+  
+#this block converts the Constructors to their color for plotting purposes
+  cols &lt;- c("Ferrari" = "red", 
+            "Force India" = "pink",
+            "Mercedes" = "turquoise",
+            "Red Bull" = "darkblue",
+            "Williams" = "grey70",
+            "Toro Rosso" = "blue",
+            "Haas" = "brown",
+            "Renault" = "yellow",
+            "Sauber" = "cornflowerblue",
+            "McLaren" = "orange",
+            "Minardi" = "darkgoldenrod1",
+            "HRT" = "grey10",
+            "Caterham" = "forestgreen",
+            "Lotus" = "black",
+            "Manor" = "blue4",
+            "BMW Sauber" = "darkgray"
+  )
+  
+  #get the driver name from the ui side. format it for input into the scrape
+  chauffeur &lt;- reactive({
+    a &lt;- tolower(input$driver)
+    a &lt;- gsub(" ", "-", a)
+    a
+  })
+ 
+  #scrape and build the data table by parsing the XML
+   results &lt;- reactive({
+    url &lt;- paste0("http://www.statsf1.com/en/",chauffeur(),"/grand-prix.aspx")
+    h &lt;- handle(url)
+    res &lt;- GET(handle = h)
+    resXML &lt;- htmlParse(content(res, as = "text"))
+    
+    #The XML isnt great so I need to remove blank rows at the end and header names
+    #Each vector being created below will be a column in the final data frame
+    Year&lt;- getNodeSet(resXML, '//*//tr/td[2]') %&gt;% sapply(., xmlValue)
+    Year &lt;- Year[Year != ""]
+    Year &lt;- Year[-c(1)]
+    GrandPrix&lt;- getNodeSet(resXML, '//*//tr/td[3]') %&gt;% sapply(., xmlValue)
+    GrandPrix &lt;- GrandPrix[GrandPrix != ""]
+    GrandPrix &lt;- GrandPrix[-c(1)]
+    Team&lt;- getNodeSet(resXML, '//*//tr/td[4]') %&gt;% sapply(., xmlValue)
+    Team &lt;- Team[-c(1)]
+    Team &lt;- Team[Team != ""]
+    Num&lt;- getNodeSet(resXML, '//*//tr/td[5]') %&gt;% sapply(., xmlValue)
+    Num &lt;- Num[Num != ""]
+    Num &lt;- Num[-c(1)]
+    Constructor&lt;- getNodeSet(resXML, '//*//tr/td[6]') %&gt;% sapply(., xmlValue)
+    Constructor &lt;- Constructor[Constructor != ""]
+    Constructor &lt;- Constructor[-c(1)]
+    Car &lt;- getNodeSet(resXML, '//*//tr/td[7]') %&gt;% sapply(., xmlValue)
+    Car &lt;- Car[-c(1)]
+    Car &lt;- Car[Car != ""]
+    Engine&lt;- getNodeSet(resXML, '//*//tr/td[8]') %&gt;% sapply(., xmlValue)
+    Engine &lt;- Engine[-c(1)]
+    Engine &lt;- Engine[Engine != ""]
+    Type&lt;- getNodeSet(resXML, '//*//tr/td[9]') %&gt;% sapply(., xmlValue)
+    Type &lt;- Type[Type != ""]
+    Type &lt;- Type[-c(1)]
+    Tyre&lt;- getNodeSet(resXML, '//*//tr/td[10]') %&gt;% sapply(., xmlValue)
+    Tyre &lt;- Tyre[Tyre != ""]
+    Tyre &lt;- Tyre[-c(1)]
+    Grid&lt;- getNodeSet(resXML, '//*//tr/td[11]') %&gt;% sapply(., xmlValue)
+    Grid &lt;- Grid[Grid != ""]
+    Race&lt;- getNodeSet(resXML, '//*//tr/td[12]') %&gt;% sapply(., xmlValue)
+    Race &lt;- Race[Race != ""]
+    Race[Race == "ab"] &lt;- "22" #Change the ab to 22 for non finishes
+    Note&lt;- getNodeSet(resXML, '//*//tr/td[13]') %&gt;% sapply(., xmlValue)
+    Note &lt;- Note[Note != ""]
+
+    #put it all into a data frame and call it to set the reactive variable
+    df &lt;- data.frame(Year,GrandPrix,Team,Num,Constructor,Car,Engine,Type,Tyre,Grid,Race,Note, stringsAsFactors = F)
+    df$YR_RACE &lt;- paste0(Year,"_",GrandPrix)
+    df
+  })
+   
+   #pull out any wins
+  wins &lt;- reactive({
+    x &lt;- results()[which(results()$Race == "1"),]
+    x$Race &lt;- as.numeric(x$Race) - 1
+    x
+  })
+  
+  #plot it all
+  #check out geom_emoji!!! It's what makes the trophies:
+  #https://github.com/dill/emoGG
+  p &lt;- reactive({
+    ggplot(data=results(), aes(x=YR_RACE, y=as.numeric(as.character(Race)), colour=results()$Constructor)) +
+      geom_point() +
+      #add the wins
+      geom_emoji(data=wins(), aes(x=wins()$YR_RACE, y=as.numeric(as.character(wins()$Race)), colour=wins()$Constructor), emoji="1f3c6") +
+      #set up the axis, label 22 as DNF for non finishes
+      scale_y_reverse(breaks=c(1,2,3,10,22), labels = c("1","2","3","10","DNF"), lim=c(22,-1)) +
+     theme(axis.text.y = element_text(color = c("black", "black", "black", "black", "red")),
+            axis.ticks.y = element_line(color = c("black", "black", "black", "black", "red"),
+                                        size = c(1,1,1,1,1,1))) +
+      scale_colour_manual(values = cols) +
+      labs(colour='Constructor') +
+      ylab("Race Finish") +
+      xlab("Grand Prix") +
+      theme(axis.text.x = element_text(size = rel(0.8),angle = 90, hjust = 1))
+  })
+  
+  output$plot1 &lt;- renderPlot({
+    print(p())
+  })
+    
+  output$table1 &lt;- renderTable({
+    results()[-c(13)]
+  })
+}
+
+#this list will be input into the selectInput()
+drivers &lt;- list(
+  "Fernando ALONSO",
+  "Valtteri BOTTAS" ,
+  "Marcus ERICSSON" ,
+  "Antonio GIOVINAZZI" ,
+  "Romain GROSJEAN" ,
+  "Lewis HAMILTON" ,
+  "Nico HULKENBERG",
+  "Daniil KVYAT" ,
+  "Kevin MAGNUSSEN" ,
+  "Felipe MASSA" ,
+  "Esteban OCON" ,
+  "Jolyon PALMER" ,
+  "Sergio PEREZ" ,
+  "Kimi RAIKKONEN" ,
+  "Daniel RICCIARDO" ,
+  "Carlos SAINZ" ,
+  "Lance STROLL" ,
+  "Stoffel VANDOORNE" ,
+  "Max VERSTAPPEN" ,
+  "Sebastian VETTEL" ,
+  "Pascal WEHRLEIN"
+)
+
+#very simple ui page...
+ui &lt;- fluidPage(
+  headerPanel('Formula 1 Results'),
+  mainPanel(
+    selectInput("driver", "Choose a driver", drivers, selected = NULL, multiple = FALSE,
+                selectize = TRUE, width = NULL, size = NULL)
+  ),
+  mainPanel(plotOutput("plot1"),
+              tableOutput("table1"),
+            width = 10)
+)
+
+#call the app
+shinyApp(ui = ui, server = server)</code></pre>
+
+<div class="section level2" id="session">
+<h2>
+Session</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.3 (2017-03-06)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: macOS Sierra 10.12.3
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] dplyr_0.5.0    shiny_1.0.1    XML_3.98-1.7   httr_1.2.1    
+## [5] RCurl_1.95-4.8 bitops_1.0-6   emoGG_0.0.2    ggplot2_2.2.1 
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.10     knitr_1.15.1     magrittr_1.5     munsell_0.4.3   
+##  [5] xtable_1.8-2     colorspace_1.3-2 R6_2.2.0         stringr_1.2.0   
+##  [9] plyr_1.8.4       tools_3.3.3      grid_3.3.3       gtable_0.2.0    
+## [13] png_0.1-7        DBI_0.6          htmltools_0.3.5  yaml_2.1.14     
+## [17] lazyeval_0.2.0   rprojroot_1.2    digest_0.6.12    assertthat_0.1  
+## [21] tibble_1.2       mime_0.5         evaluate_0.10    rmarkdown_1.4   
+## [25] stringi_1.1.3    scales_0.4.1     backports_1.0.5  httpuv_1.3.3    
+## [29] proto_1.0.0</code></pre>
+</div>
+</div>
+
+
+  
+</article>
+</li>
+      
+    </ul>
+
+    
+
+
+  </div>
+  <div class="col-md-4">
+<!--    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/2015-07-23-r-rmarkdown/" class="list-group-item">Hello R Markdown</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/r" class="list-group-item">r</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/plot" class="list-group-item">plot</a>
+      
+      <a href="/tags/r-markdown" class="list-group-item">r-markdown</a>
+      
+      <a href="/tags/regression" class="list-group-item">regression</a>
+      
+    </div>
+  </section>
+  
+
+</aside>
+-->
+    <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>This is an archived post of <a href="http://2-bitbio.com">2-bitbio</a>.</p>
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+
