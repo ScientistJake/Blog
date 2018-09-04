@@ -1,0 +1,403 @@
+---
+title: "Clustering RNAseq data using fuzzy c-means clustering"
+author: "Jake Warner"
+date: 2018-07-31T21:13:14-05:00
+categories: ["BioInformatics"]
+tags: ["R", "RNAseq", "clustering"]
+---
+
+Note this is part 2 of a series on clustering RNAseq data. Check out [part one  on hierarcical clustering here](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) and [part two on K-means clustering here](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html).
+
+Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in [part one](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) and [part two](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html) of this series. Today we're going to discuss yet another approach, fuzzy c-means clustering a.k.a. soft K-means clustering.
+
+Fuzzy c-means clustering is useful for RNAseq data since gene expression is inherently noisy and fuzzy clustering is more robust to this noise. Furthermore we can use the membership score, a key feature of soft clustering, to filter genes which don't have a high membership for any cluster (because they're probably noise). First let's talk a bit about what fuzzy c-means is and how it relates to k-means. Feel free to skip down to the part where we apply this algorithm to transcriptomic data.
+
+## What is fuzzy c-means clustering?
+Fuzzy c-means clustering, oftentimes called soft k-means clustering, is a variant of k-means clustering in which each datapoint simulataneously exists in all clusters with varying degrees of **membership** which are on a scale of 0 and 1. By convention, we classify the datapoint into a cluster to which it has the highest membership.
+
+## How is fuzzy c-means clustering different from regular (hard) K-means?
+As a [partioning clustering algorithm](https://en.wikipedia.org/wiki/K-means_clustering) K-means clustering will assign each and every datapoint to one and only one cluster. One downside to this is it *forces* in between datapoints into one clsuter or another. Furthermore since the mean of those data dictate the position of the cluster center these in between and outlier points can affect the overall cluster structure. 
+
+Fuzzy c-means on the other hand is very similar except it assigns each data-point a cluster membership score, where being closer to the cluster center means a higher score, and these scores are used to position the centroids. Thus, fuzzy clustering is more robust against noise and outliers since low scoring datapoints have a reduced impact on the position of the cluster center. 
+
+Consider the two plots below, the first is hard k-means clustering and the second is fuzzy c-means. Note that in the latter the cluster membership score is reported and those closer to the center have higher scores.
+```{r warning=F,message=FALSE, echo=FALSE,fig.height = 6, fig.width = 6}
+library(ggplot2)
+library(gganimate)
+library(e1071)
+library(gridExtra)
+# useful function to match cluster assignments
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/matchLabels.R')
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/accuracyMeasures.R')
+
+#make some test data, it has 3 clusters
+df1 = data.frame(x = rnorm(100, mean =5,sd=1.5),y = rnorm(100, mean =10,sd=1.5))
+df1 = rbind(df1,data.frame(x = rnorm(100, mean =10,sd=1.5),y = rnorm(100, mean =5,sd=1.5)))
+df1= rbind(df1,data.frame(x = rnorm(100, mean =2,sd=1.5),y = rnorm(100, mean =2,sd=1.5)))
+
+#run the fuzzy
+FCMres <- cmeans(df1,centers=3)
+
+#pin the results to the initial data
+FCMres_plot <- data.frame(FCMres$cluster)
+FCMres_plot$x <- df1$x
+FCMres_plot$y <- df1$y
+names(FCMres_plot) <- c("cluster","x","y")
+
+#and the easiest way to get the centroids:
+centroids <-data.frame(FCMres$centers)
+#fetch the membership for each gene/top scoring cluster
+FCMres_plot$membership <- sapply(1:length(FCMres_plot$cluster),function(row){
+  clust <- FCMres_plot[row,1]
+  FCMres$membership[row,clust]
+})
+
+FCMres_plot$cluster <- factor(FCMres_plot$cluster)
+
+
+# run a kmeans:
+kres = kmeans(df1, centers=3)
+plotting_df <- df1
+plotting_df$cluster <- kres$cluster
+
+#match fuzzy results with kmeans so they look the same
+plotting_df$cluster <- data.frame(matchLabels(kres$cluster,FCMres$cluster))[,1]
+#factor the cluster for ggplot
+plotting_df$cluster <- factor(plotting_df$cluster)
+
+#static centers for non animated
+centers <- data.frame(kres$centers)
+
+p1 <- ggplot(plotting_df, aes(x=x, y=y,color=cluster)) + 
+  geom_point() +
+  scale_colour_manual(values=c('blue','purple','green'))+
+  geom_point(data=centers,aes(x=x,y=y),color='red') +
+  labs(title='Kmeans')
+
+p2 <- ggplot(FCMres_plot, aes(x=x,y=y, color=cluster,alpha=membership)) +
+  geom_point()+
+  scale_colour_manual(values=c('blue','purple','green'))+
+  geom_point(data=centroids,aes(x=x,y=y),color='red',inherit.aes = F)+
+  labs(title='fuzzy c-means')
+
+library(grid)
+g1 <- ggplotGrob(p1)
+g2 <- ggplotGrob(p2)
+g <- rbind(g1, g2, size="first") # stack the two plots
+g$widths <- unit.pmax(g1$widths, g2$widths) # use the largest widths
+# center the legend vertically
+#g$layout[grepl("guide", g$layout$name),c("t","b")] <- c(1,nrow(g))
+grid.newpage()
+grid.draw(g)
+```
+
+It's subtle because these dummy data are pretty clusterable but the centroids are different on account that the data points with low membership have less effect on the centroid position.
+
+This concept of membership is an important part of fuzzy c-means and we must keep in mind that **every data point belongs in all clusters simultaneously** with varying degrees of membership. Here's the same data showing membership scores for each of the three clusters:
+
+```{r warnings=FALSE, echo=FALSE,fig.height = 9, fig.width = 6}
+FCMres_mem <- data.frame(FCMres$membership)
+names(FCMres_mem) <- c("cluster.1","cluster.2","cluster.3")
+FCMres_mem$x <- df1$x
+FCMres_mem$y <- df1$y
+
+p3 <- ggplot(FCMres_mem, aes(x=x,y=y,alpha=cluster.1)) +
+  geom_point(color='blue')+
+  geom_point(data=centroids,aes(x=x,y=y),color='red',inherit.aes = F)
+
+p4 <- ggplot(FCMres_mem, aes(x=x,y=y,alpha=cluster.2)) +
+  geom_point(color='purple')+
+  geom_point(data=centroids,aes(x=x,y=y),color='red',inherit.aes = F)
+
+p5 <- ggplot(FCMres_mem, aes(x=x,y=y,alpha=cluster.3)) +
+  geom_point(color='green')+
+  geom_point(data=centroids,aes(x=x,y=y),color='red',inherit.aes = F)
+
+grid::grid.newpage()
+grid::grid.draw(rbind(ggplotGrob(p3), ggplotGrob(p4),ggplotGrob(p5), size = "last"))
+```
+
+The sum of all of the membership scores for one data point is 1 and by convention we assign the data point to the cluster in which it's membership is highest. As a side note. By applying a threshold of membership we can de-classify data points and eliminate them from downstream analyses. 
+
+Finally, fuzzy c-means introduces a fuzzifier, `m`, to determine how fuzzy the clusters are. `m=1` is equivalent to hard clustering (memberships are binary of 0 or 1) and higher `m` lowers score overall of outlying data points.
+
+Here's how increasing the `m` affects the scores (note the plot is animated):
+```{r, echo=F,eval=F}
+library(gganimate)
+
+increasing_m_res <- cmeans(df1,centers=3,m=1.01)
+increasing_m_plot <- data.frame(cluster=increasing_m_res$cluster)
+increasing_m_plot$cluster <- data.frame(matchLabels(increasing_m_plot$cluster,FCMres$cluster))[,1]
+increasing_m_plot$membership <- sapply(1:length(increasing_m_plot$cluster),function(row){
+  clust <- increasing_m_plot[row,1]
+  increasing_m_res$membership[row,clust]
+})
+increasing_m_plot$x <- df1$x
+increasing_m_plot$y <- df1$y
+increasing_m_plot$m <- 1.01
+previous_clusters <- increasing_m_plot$cluster
+
+for (i in seq(from=1.02,to=10, by=0.02)){
+  increasing_m_res <- cmeans(df1,centers=3,m=i)
+  increasing_m <- data.frame(cluster=increasing_m_res$cluster)
+  increasing_m$x <- df1$x
+  increasing_m$y <- df1$y
+  increasing_m$m <- i
+  increasing_m$membership <- sapply(1:length(increasing_m$cluster),function(row){
+    clust <- increasing_m[row,1]
+    increasing_m_res$membership[row,clust]
+  })
+  increasing_m$cluster <- data.frame(matchLabels(increasing_m$cluster,previous_clusters))[,1]
+  increasing_m_plot <- rbind(increasing_m_plot,increasing_m)
+}
+
+increasing_m_plot$cluster <- factor(increasing_m_plot$cluster)
+
+p1 <- ggplot(increasing_m_plot, aes(x=x, y=y,color=cluster,alpha=membership)) +
+  geom_point() +
+  scale_colour_manual(values=c('green','purple','blue'))+
+  geom_point(data=centroids,aes(x=x,y=y),color='red',inherit.aes = F)+
+  #Here comes the gganimate code
+  transition_manual(m) +
+  labs(title = 'Fuzzy c-means increasing m 1 to 10', x = 'x', y = 'y')
+
+magick::image_write(animate(p1, width = 500, height = 320), "/Users/jaocbwarner/Documents/Github_repos/Blog/public/post/temp/increasing_m.gif")
+```
+<img src="/Users/jaocbwarner/Documents/Github_repos/Old_blog/fuzzy/increasing_m.gif"></img>
+
+You can see as m increases the outlying datapoints decrease in membership score.
+
+## How to use fuzzy c-means with RNAseq data
+Fuzzy clustering has several advantages over hard clustering when it comes to RNAseq data. Because the positioning of the centroids relies on data point membership the clustering is more robust to the noise inherent in RNAseq data. 
+
+There is a nice package, [mFuzz](https://www.bioconductor.org/packages/release/bioc/html/Mfuzz.html), for performing fuzzy c-means clustering on expression data. Look out for a future tutorial on this package but for now we'll use the `e1071` package which includes several soft-clustering algorithms so we can get a better feel for the workflow.
+
+For this tutorial we'll use the same dataset we used previously in the post on [post on k-means clustering](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html). First we download the data, apply a quick normalization and, for the sake of this tutorial and computation time, we'll take a subset of the most highly expressed and variable genes. I'm also injecting a random sample of low variance genes to see how the clustering algorithms hold up to this noise.
+```{r warning=F,message=FALSE}
+library(edgeR)
+library(SummarizedExperiment)
+load(url("http://duffel.rail.bio/recount/SRP049355/rse_gene.Rdata"))
+counts <- assays(rse_gene)$counts
+y <- as.matrix((counts))
+y <- DGEList(counts = y, group=c(1,2,3,4,5,6,7,8,9,10))
+y <- calcNormFactors(y)
+z <- cpm(y, normalized.lib.size=TRUE)
+
+#mean/variance calculations
+z_var <- apply(z, 1, var)
+z_mean <- apply(z, 1, mean)
+
+#take only the most highly express/ variable
+#this is just for the sake of this tutorial
+test_data <- z[which(z_var > 50 & z_mean > 50), 6:10]
+
+#sample some of the lw variance genes
+test_data <- rbind(test_data, z[sample(which(z_var < 5),1000), 6:10])
+```
+
+### Should you filter the data?
+Gene expression data is notoriously noisy. For k-means clustering I recommend filtering based on mean expression (drop low counts), variance, FC, or anything else to get rid of background genes. Since fuzzy c-means is more noise robust we could perform an *a posteriori* filter using the membership scores. This has the benefit of not exluding genes which have an interesting profile but don't make the filtering threshold. It's up to you. Either way I would exclude noisy genes from downstream analyses.
+
+Before clustering however we need to scale the data. This is so that we can identify clusters of genes that share similar expression profiles rather than similar expression levels.
+```{r warning=F,message=FALSE}
+scaledata <- t(scale(t(test_data))) # Centers and scales data.
+scaledata <- scaledata[complete.cases(scaledata),]
+```
+
+## Fuzzy c-means: Estimate the fuzzifier
+As we described above, fuzzy c-means relies on a fuzzifier parameter to designate how 'fuzzy' the clusters are. [Schwaemmle and Jensen described a method for estimating the fuzzifier](https://www.ncbi.nlm.nih.gov/pubmed/20880957) and Mattias Futschik [wrapped it into a function](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2139991/) which we are using here:
+```{r warning=F,message=FALSE}
+mestimate<- function(df){
+  N <-  dim(df)[[1]]
+  D <- dim(df)[[2]]
+  m.sj <- 1 + (1418/N + 22.05)*D^(-2) + (12.33/N +0.243)*D^(-0.0406*log(N) - 0.1134)
+  return(m.sj)
+}
+
+m <- mestimate(scaledata)
+m
+```
+
+## Fuzzy c-means: How many clusters?
+Fuzzy c-means, like K-means, clustering requires *a priori* knowledge of the number of clusters. The number of clusters can really impact the classifications so it's an important consideration. [Check out the post on k-means clustering](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html) for a lengthy discussion for choosing a cluster number. Those methods can be applied to fuzzy c-means as well. For simplicity here we will use the within cluster sum of squared error (elbow method):
+```{r warning=F,message=FALSE,fig.height= 5, fig.width = 5}
+library(e1071)
+#helper function for the within sum of squared error
+sumsqr <- function(x, clusters){
+  sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
+  wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
+  return(wss)
+}
+
+#get the wss for repeated clustering
+iterate_fcm_WSS <- function(df,m){
+  totss <- numeric()
+  for (i in 2:20){
+    FCMresults <- cmeans(df,centers=i,m=m)
+    totss[i] <- sum(sumsqr(df,FCMresults$cluster))
+  }
+  return(totss)
+}
+wss_2to20 <- iterate_fcm_WSS(scaledata,m)
+plot(1:20, wss_2to20[1:20], type="b", xlab="Number of Clusters", ylab="wss")
+```
+
+It looks like the inflection is between 4 and 6 clusters. In a full analysis I'd recommend comparing several different cluster numbers. Higher cluster numbers can unmask substructures that are hidden in lower cluster numbers. On the other hand with too many clusters can create redundant or highly overlapping clusters.
+
+Here we will proceed with k=6.
+```{r warning=F,message=FALSE}
+k = 5
+fcm_results <- cmeans(scaledata,centers=k,m=m)
+```
+
+First we'll look the centroid profiles:
+```{r warning=F,message=FALSE,fig.width = 6}
+#import some data manipulation functions
+library(reshape2)
+library(tidyr)
+library(dplyr)
+
+#get the centroids into a long dataframe:
+fcm_centroids <- fcm_results$centers
+fcm_centroids_df <- data.frame(fcm_centroids)
+fcm_centroids_df$cluster <- row.names(fcm_centroids_df)
+centroids_long <- tidyr::gather(fcm_centroids_df,"sample",'value',1:5)
+
+ggplot(centroids_long, aes(x=sample,y=value, group=cluster, colour=as.factor(cluster))) + 
+  geom_line() +
+  xlab("Time") +
+  ylab("Expression") +
+  labs(title= "Cluster Expression by Time",color = "Cluster")
+```
+
+So we have some interesting patterns! The cluster centroids are well separated although there might be some redundancy as a couple of the profiles look very similar.
+
+We can assess the similarity of the cluster centroids to identify redundancy or high overlap. To do we simply correlate the cluster centroids with each other. If the centroids are too similar then they will have a high correlation. If your K number produces clusters with high correlation (say above 0.85) then consider reducing the number of clusters.
+
+Correlate the centroids to see how similar they are:
+```{r warning=F,message=FALSE}
+cor(t(fcm_centroids))
+```
+
+It looks like we have good separation of the clusters as no cor score is above 0.85.
+
+Now's the fun part where we can plot the gene profiles by cluster. We simply subset the results and the centroids by cluster and plot it out. We can also set a color scale for the membership score:
+```{r warning=F,message=FALSE,fig.width = 6}
+#start with the input data
+fcm_plotting_df <- data.frame(scaledata)
+
+#add genes
+fcm_plotting_df$gene <- row.names(fcm_plotting_df)
+
+#bind cluster assinment
+fcm_plotting_df$cluster <- fcm_results$cluster
+#fetch the membership for each gene/top scoring cluster
+fcm_plotting_df$membership <- sapply(1:length(fcm_plotting_df$cluster),function(row){
+  clust <- fcm_plotting_df$cluster[row]
+  fcm_results$membership[row,clust]
+})
+
+k_to_plot = 1
+
+#subset the dataframe by the cluster and get it into long form
+#using a little tidyr action
+cluster_plot_df <- dplyr::filter(fcm_plotting_df, cluster == k_to_plot) %>%
+  dplyr::select(.,1:5,membership,gene) %>%
+  tidyr::gather(.,"sample",'value',1:5)
+
+#order the dataframe by score
+cluster_plot_df <- cluster_plot_df[order(cluster_plot_df$membership),]
+#set the order by setting the factors using forcats
+cluster_plot_df$gene = forcats::fct_inorder(cluster_plot_df$gene)
+
+#subset the cores by cluster
+core <- dplyr::filter(centroids_long, cluster == k_to_plot)
+
+ggplot(cluster_plot_df, aes(x=sample,y=value)) + 
+    geom_line(aes(colour=membership, group=gene)) +
+    scale_colour_gradientn(colours=c('blue1','red2')) +
+    #this adds the core 
+    geom_line(data=core, aes(sample,value, group=cluster), color="black",inherit.aes=FALSE) +
+    xlab("Time") +
+    ylab("Expression") +
+    labs(title= paste0("Cluster ",k_to_plot," Expression by Time"),color = "Score")
+
+```
+
+In this plot, genes with a profile close to the core have a membership score approaching 1 (red) while those with divergent patterns have a score closer to 0 (blue). You can see there is some noise but the genes mostly fit the cluster model. If you observe many genes with low scores consider increasing your K as they've been 'forced' into a cluster in which they don't belong. Too much noise in the data can also lead to low scoring genes.
+
+### Should you filter the data (redux)?
+This is the point where I'd filter the data based on membership score before proceeding to downstream analysis. This will leave out genes that don't fit well into any cluster, which are probably noise, before proceeding.
+
+##Comparing cluster methods: 
+Let's see how this compares to hard K-means clustering!
+
+First we perform the kmeans:
+```{r warning=F,message=FALSE}
+#perform the kmeans
+kmeans_results <- kmeans(scaledata,centers=5)
+```
+
+Now we will use the WGCNA function `matchLabels` to line up the cluster assignments. This doesn't change the structure of the cluster, but attempts to rename the cluster based on the cluster assignment from another dataset. Then we calculate the cluster overlap using the `overlapTable` function.
+
+```{r message=F,fig.width = 6}
+#these functions from the WCGNA package are great for this:
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/matchLabels.R')
+source('https://raw.githubusercontent.com/cran/WGCNA/master/R/accuracyMeasures.R')
+
+#grab the cluster vector for kmeans
+kmeans_clusters <- kmeans_results$cluster
+#grab the cluster vector for fuzzy
+fcm_clusters <- fcm_results$cluster
+
+#grab the cluster vector
+kmeans_clusters_matched <- matchLabels(kmeans_clusters,fcm_clusters)
+
+#add a prefix so we can tell them apart:
+kmeans_clusters_matched <- paste0('K-',kmeans_clusters_matched)
+fcm_clusters <- paste0('FCM-',fcm_clusters)
+
+#calculate the overlap
+OT<- overlapTable(kmeans_clusters_matched, fcm_clusters)
+#get rid of 0 values...
+OT$pTable[OT$pTable == 0] <- 2e-300
+
+textMatrix= paste(signif(OT$countTable, 2), "\n(",
+                      signif(OT$pTable, 1), ")", sep= "")
+dim(textMatrix)= dim(OT$countTable)
+#par(mar=c(10,10,10,10))
+library(gplots)
+heatmap.2(x= -log(OT$pTable),
+          dendrogram = "none",
+          Colv =F,
+          Rowv = F,
+          scale = c("none"),
+          col="heat.colors",
+          na.rm=TRUE,
+          cellnote = textMatrix,
+          notecol="grey30",
+          notecex=0.6,
+          trace=c("none"),
+          cexRow = 0.8,
+          cexCol = 0.8,
+          main = "Cluster-Cluster Overlap",
+          xlab = "Fuzzy C-means (k=5)",
+          ylab = "Kmeans (k=5)")
+```
+
+As you can see there is some discrepancy in how the two algorithms behave but overall they perform similarly. Since we enriched our dataset in the most highly variable genes we would expect the clustering to be fairly robust in both cases. As we noted above, fuzzy c-means performs better in noisier datasets which might be more typical than our practice data here.
+
+## What to do from here?
+Once we are happy with our clustering we can do lots of analyses on the clustered dataset. Including but not limited to:
+
+* Correlate phenotypic data with our clusters (can use the centroids for this).
+* Perform gene set enrichmnet analysis on our clusters (GSEA).
+* Test for gene ontology (GO) term enrichment in our clusters.
+* Compare cluster membership between datasets.
+* Analyze the highest scoring genes within clusters (core genes).
+
+Hope this helps! Tune in for part four of this series on clustering when we take the mFuzz package for a test drive!
+
+```{r session}
+sessionInfo()
+```

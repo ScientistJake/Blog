@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Python on 2-BitBio</title>
+    <link>/tags/python/</link>
+    <description>Recent content in Python on 2-BitBio</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 04 Sep 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>One hot encode a DNA sequence using python and scikit learn</title>
+      <link>/post/one-hot-encode-a-dna-sequence-using-python-and-scikit-learn/</link>
+      <pubDate>Tue, 04 Sep 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/one-hot-encode-a-dna-sequence-using-python-and-scikit-learn/</guid>
+      <description>From the archive: Machine learning (in the informatics world) is like teenage sex: everyone talks about it, nobody really knows how to to do it, everyone thinks everyone else is doing it, so everyone claims they are too. Juvenile comparisons aside, the power of these tools can’t be ignored. Before applying most machine learning algorithms to DNA sequences they must first be converted to binary strings. Here we’ll show how to one hot encode a DNA sequence in Python using SciKit Learn.</description>
+    </item>
+    
+  </channel>
+</rss>
