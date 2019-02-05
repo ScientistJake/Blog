@@ -6,10 +6,19 @@
     <description>Recent content in Rnaseq on 2-BitBio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 31 Jul 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 04 Feb 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/rnaseq/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Clustering RNAseq data using K-means: how many clusters?</title>
+      <link>/post/clustering-rnaseq-data-using-k-means-how-many-clusters/</link>
+      <pubDate>Mon, 04 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/clustering-rnaseq-data-using-k-means-how-many-clusters/</guid>
+      <description>From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number and test drive some visualizations and plots.</description>
+    </item>
     
     <item>
       <title>Clustering RNAseq data using fuzzy c-means clustering</title>
