@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="pinterest" content="nopin">
+<meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+<meta name="generator" content="Hugo 0.45.1" />
+
+
+
+<link rel="canonical" href="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+    <title>Clustering RNAseq data using K-means: how many clusters? - 2-BitBio</title>
+    
+<meta name="description" content="From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number then we’ll test drive some visualizations and plots.">
+
+<meta property="og:title" content="Clustering RNAseq data using K-means: how many clusters? - 2-BitBio">
+<meta property="og:type" content="article">
+<meta property="og:url" content="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/">
+<meta property="og:image" content="/images/default.png">
+<meta property="og:site_name" content="2-BitBio">
+<meta property="og:description" content="From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number then we’ll test drive some visualizations and plots.">
+<meta property="og:locale" content="ja_JP">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="2-BitBio">
+<meta name="twitter:url" content="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/">
+<meta name="twitter:title" content="Clustering RNAseq data using K-means: how many clusters? - 2-BitBio">
+<meta name="twitter:description" content="From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number then we’ll test drive some visualizations and plots.">
+<meta name="twitter:image" content="/images/default.png">
+
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "NewsArticle",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id":"/"
+    },
+    "headline": "Clustering RNAseq data using K-means: how many clusters? - 2-BitBio",
+    "image": {
+      "@type": "ImageObject",
+      "url": "/images/default.png",
+      "height": 800,
+      "width": 800
+    },
+    "datePublished": "2019-02-04T00:00:00JST",
+    "dateModified": "2019-02-04T00:00:00JST",
+    "author": {
+      "@type": "Person",
+      "name": "2-BitBio"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "2-BitBio",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "/images/logo.png",
+        "width": 600,
+        "height": 60
+      }
+    },
+    "description": "From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number then we’ll test drive some visualizations and plots."
+  }
+</script>
+
+
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-111736277-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-111736277-3');
+</script>
+
+
+  </head>
+
+  <body>
+    
+    
+    
+
+    <header class="l-header">
+      <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">2-BitBio</a>
+          </div>
+
+          
+
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        
+<div class="row">
+  <div class="col-md-8">
+
+    <nav class="p-crumb">
+      <ol class="breadcrumb">
+        <li><a href="/"><i class="fa fa-home" aria-hidden="true"></i></a></li>
+        
+        <li itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb"><a href="/post/" itemprop="url"><span itemprop="title">post</span></a></li>
+        
+        <li class="active">Clustering RNAseq data using K-means: how many clusters?</li>
+      </ol>
+    </nav>
+
+    <article class="single">
+  <header>
+    <ul class="p-facts">
+      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2019-02-04T00:00:00JST">Feb 4, 2019</time></li>
+      <li><i class="fa fa-bookmark" aria-hidden="true"></i><a href="/post/">post</a></li>
+      
+    </ul>
+
+    <h1 class="title">Clustering RNAseq data using K-means: how many clusters?</h1>
+  </header>
+
+  
+
+  <div class="article-body"><p>From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number then we’ll test drive some visualizations and plots.</p>
+<script>
+window.location.replace("https://2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html");
+</script>
+<p>Hold tight while I find that page…</p>
+</div>
+
+  <footer class="article-footer">
+    
+    
+    
+    <section class="bordered">
+      <header>
+        <div class="panel-title">CATEGORIES</div>
+      </header>
+      <div>
+        <ul class="p-terms">
+          
+          <li><a href="/categories/bioinformatics/">BioInformatics</a></li>
+          
+        </ul>
+      </div>
+    </section>
+    
+    
+    
+    <section class="bordered">
+      <header>
+        <div class="panel-title">TAGS</div>
+      </header>
+      <div>
+        <ul class="p-terms">
+          
+          <li><a href="/tags/clustering/">clustering</a></li>
+          
+          <li><a href="/tags/r/">R</a></li>
+          
+          <li><a href="/tags/rnaseq/">RNAseq</a></li>
+          
+        </ul>
+      </div>
+    </section>
+    
+    
+  </footer>
+
+</article>
+
+
+    
+  </div>
+
+  <div class="col-md-4">
+    
+<aside class="l-sidebar">
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">LATESTS</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/" class="list-group-item">Clustering RNAseq data using K-means: how many clusters?</a>
+      
+      <a href="/post/one-hot-encode-a-dna-sequence-using-python-and-scikit-learn/" class="list-group-item">One hot encode a DNA sequence using python and scikit learn</a>
+      
+      <a href="/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/" class="list-group-item">Clustering RNAseq data using fuzzy c-means clustering</a>
+      
+    </div>
+  </section>
+
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">CATEGORY</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/categories/bioinformatics" class="list-group-item">bioinformatics</a>
+      
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">TAG</div>
+    </div>
+    <div class="list-group">
+      
+      <a href="/tags/clustering" class="list-group-item">clustering</a>
+      
+      <a href="/tags/r" class="list-group-item">r</a>
+      
+      <a href="/tags/rnaseq" class="list-group-item">rnaseq</a>
+      
+      <a href="/tags/machine-learning" class="list-group-item">machine-learning</a>
+      
+      <a href="/tags/python" class="list-group-item">python</a>
+      
+    </div>
+  </section>
+  
+
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">About</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p>2-BitBio is <a href="http://jacobwarner.net", target="none">Jake Warner</a></p>
+	    <p><i style="font-size:24px" class="fa">&#xf099;</i><a href="https://twitter.com/ScientistJake", target="none">@ScientistJake</a></p>
+	  </div>
+    </div>
+  </section>
+  
+  <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">Popular Posts</div>
+    </div>
+    <div class="list-group">
+	  <div class="list-group-item">
+	    <p><a href="http://2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html", target="none">Clustering RNAseq data using K-means.</a> ;</p>
+	    <p><a href="http://2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html", target="none">Clustering RNAseq data and tree cutting to identify gene modules.</a> ;</p>
+	    <p><a href="http://2-bitbio.com/2017/04/animated-3d-pca-plots-in-r.html", target="none">Animated 3D PCA plots in R.</a> ;</p>
+	    <p><a href="http://2-bitbio.com/2017/06/running-blast-in-shiny-web-application.html", target="none">Running BLAST in Shiny.</a> ;</p>
+	    <p><a href="http://2-bitbio.com/2018/06/one-hot-encode-dna-sequence-using.html", target="none">One hot encoding DNA sequences using python.</a> ;</p>
+	  </div>
+    </div>
+  </section>
+</aside>
+
+
+  </div>
+</div>
+
+      </div>
+    </main>
+
+    <footer class="l-footer">
+      <div class="container">
+        <p><span class="h-logo">&copy; 2-BitBio</span></p>
+        <aside>
+          <p>Powered by <a href="https://gohugo.io/">Hugo</a>.</p>
+          <p>Theme: <a href="https://github.com/dim0627/hugo_theme_beg">Beg</a></p>
+        </aside>
+      </div>
+    </footer>
+
+    <script src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+
