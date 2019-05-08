@@ -6,16 +6,70 @@
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
 <meta name="generator" content="Hugo 0.55.5" />
 
-<link rel="alternate" type="application/rss+xml" title="RSS" href="/tags/rnaseq/index.xml">
 
-<link rel="canonical" href="/tags/rnaseq/">
+
+<link rel="canonical" href="/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/">
 
 
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
-    <title>RNAseq - 2-BitBio</title>
+    <title>Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules. - 2-BitBio</title>
     
+<meta name="description" content="From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering.">
+
+<meta property="og:title" content="Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules. - 2-BitBio">
+<meta property="og:type" content="article">
+<meta property="og:url" content="/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/">
+<meta property="og:image" content="/images/default.png">
+<meta property="og:site_name" content="2-BitBio">
+<meta property="og:description" content="From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering.">
+<meta property="og:locale" content="ja_JP">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="2-BitBio">
+<meta name="twitter:url" content="/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/">
+<meta name="twitter:title" content="Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules. - 2-BitBio">
+<meta name="twitter:description" content="From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering.">
+<meta name="twitter:image" content="/images/default.png">
+
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "NewsArticle",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id":"\/"
+    },
+    "headline": "Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules. - 2-BitBio",
+    "image": {
+      "@type": "ImageObject",
+      "url": "\/images\/default.png",
+      "height": 800,
+      "width": 800
+    },
+    "datePublished": "2019-05-08T00:00:00JST",
+    "dateModified": "2019-05-08T00:00:00JST",
+    "author": {
+      "@type": "Person",
+      "name": "2-BitBio"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "2-BitBio",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "\/images/logo.png",
+        "width": 600,
+        "height": 60
+      }
+    },
+    "description": "From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering."
+  }
+</script>
+
+
     <link href="/css/styles.css" rel="stylesheet">
     
     
@@ -62,84 +116,84 @@
 <div class="row">
   <div class="col-md-8">
 
-    
-    <header class="page-header">
-      <h1>RNAseq</h1>
-    </header>
-    
+    <nav class="p-crumb">
+      <ol class="breadcrumb">
+        <li><a href="/"><i class="fa fa-home" aria-hidden="true"></i></a></li>
+        
+        <li itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb"><a href="/post/" itemprop="url"><span itemprop="title">post</span></a></li>
+        
+        <li class="active">Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</li>
+      </ol>
+    </nav>
 
-    <ul class="p-articles">
-      
-      <li><article class="li">
+    <article class="single">
   <header>
     <ul class="p-facts">
       <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2019-05-08T00:00:00JST">May 8, 2019</time></li>
       <li><i class="fa fa-bookmark" aria-hidden="true"></i><a href="/post/">post</a></li>
       
     </ul>
-    <h2 class="title"><a href="/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/">Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</a></h2>
+
+    <h1 class="title">Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</h1>
   </header>
 
   
-  <div class="summary">From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering.</div>
 
-  
-  <footer>
-    <a href="/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/" title="Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.">Read More…</a>
+  <div class="article-body">
+
+
+<p>From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering. We’ll identify modules by cutting the tree and evaluate our clusters.</p>
+<script>
+window.location.replace("https://2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html");
+</script>
+<p>Hold tight while I find that page…</p>
+</div>
+
+  <footer class="article-footer">
+    
+    
+    
+    <section class="bordered">
+      <header>
+        <div class="panel-title">CATEGORIES</div>
+      </header>
+      <div>
+        <ul class="p-terms">
+          
+          <li><a href="/categories/bioinformatics/">BioInformatics</a></li>
+          
+        </ul>
+      </div>
+    </section>
+    
+    
+    
+    <section class="bordered">
+      <header>
+        <div class="panel-title">TAGS</div>
+      </header>
+      <div>
+        <ul class="p-terms">
+          
+          <li><a href="/tags/clustering/">clustering</a></li>
+          
+          <li><a href="/tags/r/">R</a></li>
+          
+          <li><a href="/tags/rnaseq/">RNAseq</a></li>
+          
+        </ul>
+      </div>
+    </section>
+    
+    
   </footer>
-  
+
 </article>
-</li>
-      
-      <li><article class="li">
-  <header>
-    <ul class="p-facts">
-      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2019-02-04T00:00:00JST">Feb 4, 2019</time></li>
-      <li><i class="fa fa-bookmark" aria-hidden="true"></i><a href="/post/">post</a></li>
-      
-    </ul>
-    <h2 class="title"><a href="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/">Clustering RNAseq data using K-means: how many clusters?</a></h2>
-  </header>
 
-  
-  <div class="summary">From the archive: Clustering gene expression data allows us to identify substructures in the data and identify groups of genes that behave similarly. This method can help us identify genes that share a biological function (co-functional) and genes that are under the same control logic (co-regulated). Here we’ll show how to cluster RNAseq data using K-means clustering. We’ll address picking the appropriate clustering number then we’ll test drive some visualizations and plots.</div>
-
-  
-  <footer>
-    <a href="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/" title="Clustering RNAseq data using K-means: how many clusters?">Read More…</a>
-  </footer>
-  
-</article>
-</li>
-      
-      <li><article class="li">
-  <header>
-    <ul class="p-facts">
-      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2018-07-31T00:00:00JST">Jul 31, 2018</time></li>
-      <li><i class="fa fa-bookmark" aria-hidden="true"></i><a href="/post/">post</a></li>
-      
-    </ul>
-    <h2 class="title"><a href="/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">Clustering RNAseq data using fuzzy c-means clustering</a></h2>
-  </header>
-
-  
-  <div class="summary">Note this is part 2 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here and part two on K-means clustering here.
-Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in part one and part two of this series.</div>
-
-  
-  <footer>
-    <a href="/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/" title="Clustering RNAseq data using fuzzy c-means clustering">Read More…</a>
-  </footer>
-  
-</article>
-</li>
-      
-    </ul>
 
     
-
-
   </div>
+
   <div class="col-md-4">
     
 <aside class="l-sidebar">

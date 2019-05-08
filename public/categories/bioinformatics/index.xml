@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Bioinformatics on 2-BitBio</title>
+    <title>BioInformatics on 2-BitBio</title>
     <link>/categories/bioinformatics/</link>
-    <description>Recent content in Bioinformatics on 2-BitBio</description>
+    <description>Recent content in BioInformatics on 2-BitBio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 04 Feb 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 08 May 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/categories/bioinformatics/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</title>
+      <link>/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/</link>
+      <pubDate>Wed, 08 May 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/</guid>
+      <description>From the archive (originally published 2017-04-04): Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we’ll show how to cluster RNAseq data using hierarchical clustering.</description>
+    </item>
     
     <item>
       <title>Clustering RNAseq data using K-means: how many clusters?</title>

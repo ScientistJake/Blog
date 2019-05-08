@@ -4,7 +4,7 @@
     <meta charset="utf-8">
 <meta name="pinterest" content="nopin">
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-<meta name="generator" content="Hugo 0.45.1" />
+<meta name="generator" content="Hugo 0.55.5" />
 
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/tags/machine-learning/index.xml">
 
@@ -107,6 +107,8 @@
     </div>
     <div class="list-group">
       
+      <a href="/post/clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules/" class="list-group-item">Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</a>
+      
       <a href="/post/clustering-rnaseq-data-using-k-means-how-many-clusters/" class="list-group-item">Clustering RNAseq data using K-means: how many clusters?</a>
       
       <a href="/post/one-hot-encode-a-dna-sequence-using-python-and-scikit-learn/" class="list-group-item">One hot encode a DNA sequence using python and scikit learn</a>
@@ -174,6 +176,39 @@
 	  </div>
     </div>
   </section>
+    <section class="panel panel-default">
+    <div class="panel-heading">
+      <div class="panel-title">Archive</div>
+    </div>
+    <div class="list-group">
+      <div class="list-group-item">
+        <button class="accordion list-group-item">2018</button>
+        <div class="accordian-panel panel">
+         <p><a href="http://2-bitbio.com/2018/06/one-hot-encode-dna-sequence-using.html", target="none">One hot encoding DNA sequences using python.</a> ;</p>
+          <p><a href="http://2-bitbio.com/2018/01/making-interactive-plots-using.html", target="none">Making interactive plots using javascript and D3 (v4)</a> ;</p>
+        </div>
+      </div>
+    </div>
+    <div class="list-group">
+      <div class="list-group-item">
+        <button class="accordion list-group-item">2017</button>
+        <div class="accordian-panel">
+          <p><a href="http://2-bitbio.com/2017/12/clickable-volcano-plots-in-shiny.html", target="none">Clickable Volcano Plots in Shiny!</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/12/xkcd-plots.html", target="none">Xkcd plots!</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html", target="none">Clustering RNAseq data using K-means: how many clusters?</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/09/bulk-download-stock-data-from-yahoo.html", target="none">Bulk download stock data from Yahoo finance with R</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/09/pokemods-educational-outreach-initiative.html", target="none">Pokemodels: An outreach initiative</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/07/blastx-is-too-slow-heres-some.html", target="none">BLASTx is too slow! Here's some alternatives.</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/06/ramazon-get-your-shiny-app-on-amazon.html", target="none">Ramazon: Deploying shiny apps on AWS</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/06/running-blast-in-shiny-web-application.html", target="none">Shiny BLAST</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/05/using-shiny-to-make-web-plotter-for.html", target="none">Using Shiny to make a web plotter for RNAseq data</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/04/animated-3d-pca-plots-in-r.html", target="none">Animated 3D PCA plots</a> ;</p>
+         <p><a href="http://2-bitbio.com/2017/04/bash-commands-for-manipulating-fasta.html", target="none">Bash commands for manipulating fasta files</a> ;</p>
+          <p><a href="http://2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html", target="none">Clustering RNAseq data, making heatmaps, and tree cutting to identify gene modules.</a> ;</p>
+          <p><a href="http://2-bitbio.com/2017/04/rin-value-how-low-is-too-low.html", target="none">RIN value, how low is too low?</a> ;</p>
+          <p><a href="http://2-bitbio.com/2017/03/rna-seq-do-i-need-replicates.html", target="none">RNAseq, how many replicates?</a> ;</p>
+        </div>
+      </div>
 </aside>
 
 
@@ -197,6 +232,26 @@
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+      var acc = document.getElementsByClassName("accordion");
+      var i;
+
+      for (i = 0; i < acc.length; i++) {
+       acc[i].addEventListener("click", function() {
+          
+
+          this.classList.toggle("active");
+
+          
+         var panel = this.nextElementSibling;
+         if (panel.style.display === "block") {
+           panel.style.display = "none";
+          } else {
+            panel.style.display = "block";
+         }
+        });
+      } 
+    </script>
   </body>
 </html>
 

@@ -1,0 +1,21 @@
+---
+title: Clustering RNAseq data, making heatmaps, and tree cutting to identify gene
+  modules.
+author: ''
+date: '2019-05-08'
+slug: clustering-rnaseq-data-making-heatmaps-and-tree-cutting-to-identify-gene-modules
+categories:
+  - BioInformatics
+tags:
+  - clustering
+  - R
+  - RNAseq
+---
+From the archive (originally published 2017-04-04):  Clustering is extremely useful for generating hypotheses and data exploration in general. The idea is that genes which have similar expression patterns (co-expression genes) are often controlled by the same regulatory mechanisms (co-regulated genes). Often times co-expressed genes share similar functions so by looking at which genes are found in a cluster we can get an idea of what that cluster is doing. Here we'll show how to cluster RNAseq data using hierarchical clustering. We'll identify modules by cutting the tree and evaluate our clusters.  
+
+
+
+<script>
+window.location.replace("https://2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html");
+</script>
+Hold tight while I find that page...
