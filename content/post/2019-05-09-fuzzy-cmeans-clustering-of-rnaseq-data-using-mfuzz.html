@@ -1,0 +1,155 @@
+---
+title: "Fuzzy cMeans clustering of RNAseq data using mFuzz"
+author: ''
+date: '2019-05-09'
+slug: fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz
+categories:
+  - BioInformatics
+tags:
+  - clustering
+  - R
+  - Machine Learning
+---
+
+
+
+<p>Note this is part 4 of a series on clustering RNAseq data. Check out <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one on hierarcical clustering here</a> ; <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two on K-means clustering here</a> ; and <a href="https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">part three on fuzzy c-means clustering here</a>.</p>
+<p>Clustering is a useful data reduction technique for RNAseq experiments. In previous posts, we discussed the usefulness of hard clustering techniques such as <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">hierarcical clustering</a> and <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">K-means clustering</a>. These techniques will partition <em>all</em> genes into co-expression clusters. The major limitation of these techqniues is that gene expression data is inherently noisey, and noisy genes will impact the performance of these algorithms. In the case of k-means clustering, since the mean of each cluster is calculated every iteration and used for cluster assignment, noisy, outlier genes can skew the clusters. Fuzzy c-means clustering or more robsut to this noise. This is because in fuzzy c-means clustering each gene belongs to all clusters simultaneously. Each gene is assigned a cluster score, or how well it fits any given cluster, and these scores are factored in to the calculation of the cluster centroids. Therefore noisy genes have a much weaker effect on the clustering itself.</p>
+<p>In an <a href="https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">earlier post</a> we applied fuzzy c-means clustering to RNAseq data. In <a href="https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">another post</a> we walked through fuzzy c-means clustering. Here we’ll go through a popular package for fuzzy clustering <a href="https://bioconductor.org/packages/release/bioc/html/Mfuzz.html">mfuzz</a>. This package uses the same core function as we used <a href="https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">in the post on fuzzy cmeans</a>. The mFuzz package provides several useful wrappers and a handy plotting tool so it’s a great way to get started with fuzzy cmeans clustering of RNAseq data. Things I like about mFuzz are it’s fast fuzzifier estimation and minimum centroid distance calculation functions. What I’m not a fan of are it’s relatively inflexible plotting tool, the fact that it’s built almost exclusively for time series data and it’s use of the (in my opinion) dated ‘expression set’ data format.</p>
+<p>Let’s take it for a test drive.</p>
+<p>For this tutorial we’ll use the same dataset we used previously in the post on <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">post on k-means clustering</a> and <a href="https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">another on fuzzy clustering</a>. We download the data, apply a quick normalization and, for the sake of this tutorial and computation time, we’ll take a subset of the most highly expressed and variable genes.</p>
+<pre class="r"><code>library(edgeR)
+library(SummarizedExperiment)
+load(url(&quot;http://duffel.rail.bio/recount/SRP049355/rse_gene.Rdata&quot;))
+counts &lt;- assays(rse_gene)$counts
+y &lt;- as.matrix((counts))
+y &lt;- DGEList(counts = y, group=c(1,2,3,4,5,6,7,8,9,10))
+y &lt;- calcNormFactors(y)
+z &lt;- cpm(y, normalized.lib.size=TRUE)
+
+#mean/variance calculations
+z_var &lt;- apply(z, 1, var)
+z_mean &lt;- apply(z, 1, mean)
+
+#take only the most highly express/ variable
+#this is just for the sake of this tutorial
+test_data &lt;- z[which(z_var &gt; 50 &amp; z_mean &gt; 50), 6:10]</code></pre>
+<div id="should-you-filter-the-data" class="section level3">
+<h3>Should you filter the data?</h3>
+<p>Since fuzzy c-means is noise robust I generally perform an <em>a posteriori</em> filter using the membership scores. This has the benefit of not exluding genes which have an interesting profile but don’t make a filtering threshold before clustering. It’s up to you. Either way I would exclude noisy genes from downstream analyses.</p>
+</div>
+<div id="reading-in-the-data" class="section level3">
+<h3>Reading in the data:</h3>
+<p>Two of my least favorite things about the mFuzz package is the rather particular data format it expects and it’s exclusivity to time series data. It uses the expression set format, which is a standard format albeit less common these days, but expects the first line of the data table to include the time point information. Here we’re using time series data so that’s fine but still feels odd to include this at the top of a count table.</p>
+<p>Although mFuzz insists on the expression set format, it does have a handy function to convert a table to an expresion set <code>table2eset()</code> so that’s nice.</p>
+<p>First we bind the time point information to the dataframe, save the table, then import it as an expression set:</p>
+<pre class="r"><code>library(Mfuzz)
+
+#first get the time point data together:
+timepoint &lt;- c(1,2,3,4,5)
+# bind that to the dataframe
+test_data &lt;- rbind(timepoint, test_data)
+row.names(test_data)[1]&lt;-&quot;time&quot;
+
+#save it to a temp file so ti doesnt clutter up my blog directory
+tmp &lt;- tempfile()
+write.table(test_data,file=tmp, sep=&#39;\t&#39;, quote = F, col.names=NA)
+
+#read it back in as an expression set
+data &lt;- table2eset(file=tmp)</code></pre>
+<p>The first thing we need to do with any clustering analysis is to scale the data. This is so that we cluster the data based on expression profile and not on expression (otherwise we’d just get cluster of genes binned by average expression level). Mfuzz has a handy function for this <code>standardise()</code>.</p>
+<pre class="r"><code>data.s &lt;- standardise(data)</code></pre>
+<p>Next we need to estimate the fuzzifier. Fuzzy c-means relies on a fuzzifier parameter to designate how ‘fuzzy’ the clusters are. A fuzzifier of 1 is essentially hard clustering. <a href="https://www.ncbi.nlm.nih.gov/pubmed/20880957">Schwaemmle and Jensen described a method for estimating the fuzzifier</a> and it is wrapped into a nice function here:</p>
+<pre class="r"><code>m1 &lt;- mestimate(data.s)
+m1</code></pre>
+<pre><code>## [1] 2.023353</code></pre>
+</div>
+<div id="cluster-number-determination" class="section level3">
+<h3>cluster number determination</h3>
+<p>Determining the appropriate cluster number is tricky business and there are many ways to do it, several of which are outlined in <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">a previous post on k-means clustering</a>. I recommend trying several different cluster numbers and comparing the results. Greater cluster numbers will pull out more nuanced profiles but may result in redundant clusters. Smaller cluster numbers will result in the inappropriate grouping of distinct profiles.</p>
+<p>There’s a useful function in mFuzz <code>Dmin()</code> which calculates the minimum centroid distance between clusters for a series of cluster numbers. The idea is, after a certain number of clusters the separation of clusters becomes minimal. When we plot these we can look at the ‘elbow’ to pick the appropriate k number:</p>
+<pre class="r"><code>Dmin(data.s, m=m1, crange=seq(2,22,1), repeats=3, visu=TRUE)</code></pre>
+<p><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre><code>##  [1] 2.3945822 2.1499359 1.6018372 1.6488913 1.4637886 1.2006354 0.9809928
+##  [8] 1.0012275 0.8426883 0.8003923 0.7391631 0.7297277 0.6745646 0.6212721
+## [15] 0.5417976 0.5765033 0.5855255 0.5368553 0.5933246 0.5694307 0.5170499</code></pre>
+<p>Let’s proceed with 10 clusters. Since this is where there is no significant decrease in centroid distance.</p>
+<pre class="r"><code>clust=10</code></pre>
+<p>The clustering now is super fast:</p>
+<pre class="r"><code>c &lt;- mfuzz(data.s,c=clust,m=m1)</code></pre>
+<p>Similar to the results of <code>kmeans()</code> everthing you need is in the results object. Including the centers: <code>c[1]</code> ; the cluster assignments <code>c[3]</code> ; and the membership scores <code>c[4]</code>.</p>
+<p>mFuzz provides some nice plotting functions, although they depend on XQuartz, and aren’t as customizable as using ggplot. For an example of a ggplot based plotting solution, check the bottom of my post on <a href="https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/">fuzzy clustering</a>.</p>
+<pre class="r"><code>mfuzz.plot(data.s,cl=c,mfrow=c(1,1),time.labels=c(24,48,72,96,120),new.window=FALSE)</code></pre>
+<p><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-1.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-2.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-3.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-4.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-5.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-6.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-7.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-8.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-9.png" width="672" /><img src="/post/2019-05-09-fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz_files/figure-html/unnamed-chunk-8-10.png" width="672" /></p>
+<p>There’s another version of this plotting function, <code>mfuzz.plot2()</code> that scales the x axis and has some other paramters worth checking out.</p>
+<p>One thing worth including in any cluster analysis is a post hoc test of the correlation between cluster centroids. If you over clustered, and ended up with redundant clusters, you can detect this by correlating the centers to see if they are too similar. Ideally, no two clusters should exhibit a correlation greater than 0.85</p>
+<pre class="r"><code>cor(t(c[[1]]))</code></pre>
+<pre><code>##             1          2          3           4          5          6
+## 1   1.0000000 -0.8037316  0.8615193 -0.42703126  0.2248622  0.7587385
+## 2  -0.8037316  1.0000000 -0.5020197 -0.19195115 -0.6966660 -0.2617033
+## 3   0.8615193 -0.5020197  1.0000000 -0.69178211 -0.2547807  0.7618099
+## 4  -0.4270313 -0.1919512 -0.6917821  1.00000000  0.7251523 -0.8352165
+## 5   0.2248622 -0.6966660 -0.2547807  0.72515233  1.0000000 -0.2693886
+## 6   0.7587385 -0.2617033  0.7618099 -0.83521648 -0.2693886  1.0000000
+## 7  -0.0353153  0.6219707  0.3032117 -0.88633356 -0.8933078  0.5590429
+## 8  -0.9897733  0.7854346 -0.8035632  0.42475632 -0.2708239 -0.7825442
+## 9   0.7806400 -0.7854098  0.3686889 -0.04551345  0.6362091  0.5705313
+## 10 -0.7486190  0.2233748 -0.7994020  0.88248982  0.3426376 -0.9937354
+##              7           8           9         10
+## 1  -0.03531530 -0.98977330  0.78064004 -0.7486190
+## 2   0.62197072  0.78543461 -0.78540983  0.2233748
+## 3   0.30321170 -0.80356319  0.36868894 -0.7994020
+## 4  -0.88633356  0.42475632 -0.04551345  0.8824898
+## 5  -0.89330784 -0.27082388  0.63620910  0.3426376
+## 6   0.55904293 -0.78254415  0.57053134 -0.9937354
+## 7   1.00000000  0.02449109 -0.30768919 -0.6098718
+## 8   0.02449109  1.00000000 -0.84177625  0.7647308
+## 9  -0.30768919 -0.84177625  1.00000000 -0.4999098
+## 10 -0.60987178  0.76473082 -0.49990979  1.0000000</code></pre>
+<p>Here several of our clusters have high overlap. At this point we’d might consider going back and re-evaluating the cluster number at this point since fuzzy cmeans might not accurately classify genes between these two clusters.</p>
+<p>This might not matter however since in fuzzy clustering each gene exists in all clusters simultaneously. The cluster assignment is simply that in for which a gene has the highest score. In theory, then, in downstream analysis we could simply pull the genes that have a score above a certain threshold for inclusion like 0.75 for any given cluster and use those for analyses (enrichment tests, etc.) This does introduce the problem of double counting certain genes but depending on the analysis this may or may not matter.</p>
+<p>Here’s how to extract the scores. the function <code>acore()</code> returns a list of the scores for each gene by cluster.</p>
+<pre class="r"><code>#extracts membership values 
+acore &lt;- acore(data.s,c,min.acore=0)</code></pre>
+<p>From that, we can pull out the scores for the cluster assignments where the assignment is based on the top scoring cluster.</p>
+<pre class="r"><code>acore_list &lt;- do.call(rbind, lapply(seq_along(acore), function(i){ data.frame(CLUSTER=i, acore[[i]])}))</code></pre>
+<p>From here you can doo all the fun downstream analysis. Enrichment tests, take just the highest scoring genes of each cluster and eveloping hypotheses, or correlate the clusters with phenotypic data.</p>
+<p>Tune in next time where we will develop new clustering techniques to apply to RNAseq data.</p>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.5.0 (2018-04-23)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS Sierra 10.12.6
+## 
+## Matrix products: default
+## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+##  [1] tcltk     parallel  stats4    stats     graphics  grDevices utils    
+##  [8] datasets  methods   base     
+## 
+## other attached packages:
+##  [1] Mfuzz_2.42.0                DynDoc_1.60.0              
+##  [3] widgetTools_1.60.0          e1071_1.7-0                
+##  [5] SummarizedExperiment_1.12.0 DelayedArray_0.8.0         
+##  [7] BiocParallel_1.16.0         matrixStats_0.54.0         
+##  [9] Biobase_2.42.0              GenomicRanges_1.34.0       
+## [11] GenomeInfoDb_1.18.1         IRanges_2.16.0             
+## [13] S4Vectors_0.20.1            BiocGenerics_0.28.0        
+## [15] edgeR_3.24.0                limma_3.38.2               
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.0             compiler_3.5.0         XVector_0.22.0        
+##  [4] tkWidgets_1.60.0       bitops_1.0-6           class_7.3-14          
+##  [7] tools_3.5.0            zlibbioc_1.28.0        digest_0.6.18         
+## [10] evaluate_0.12          lattice_0.20-38        Matrix_1.2-15         
+## [13] yaml_2.2.0             blogdown_0.9           xfun_0.4              
+## [16] GenomeInfoDbData_1.2.0 stringr_1.3.1          knitr_1.20            
+## [19] locfit_1.5-9.1         rprojroot_1.3-2        grid_3.5.0            
+## [22] rmarkdown_1.10         bookdown_0.7           magrittr_1.5          
+## [25] backports_1.1.2        htmltools_0.3.6        stringi_1.2.4         
+## [28] RCurl_1.95-4.11</code></pre>
+</div>

@@ -1,0 +1,145 @@
+---
+title: "Fuzzy cMeans clustering of RNAseq data using mFuzz"
+author: ''
+date: '2019-05-09'
+slug: fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz
+categories:
+  - BioInformatics
+tags:
+  - clustering
+  - R
+  - Machine Learning
+---
+
+Note this is part 4 of a series on clustering RNAseq data. Check out [part one  on hierarcical clustering here](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) ; [part two on K-means clustering here](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html) ; and [part three on fuzzy c-means clustering here](https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/).
+
+Clustering is a useful data reduction technique for RNAseq experiments. In previous posts, we  discussed the usefulness of hard clustering techniques such as [hierarcical clustering](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) and [K-means clustering](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html). These techniques will partition *all* genes into co-expression clusters. The major limitation of these techqniues is that gene expression data is inherently noisey, and noisy genes will impact the performance of these algorithms. In the case of k-means clustering, since the mean of each cluster is calculated every iteration and used for cluster assignment, noisy, outlier genes can skew the clusters. Fuzzy c-means clustering or more robsut to this noise. This is because in fuzzy c-means clustering each gene belongs to all clusters simultaneously. Each gene is assigned a cluster score, or how well it fits any given cluster, and these scores are factored in to the calculation of the cluster centroids. Therefore noisy genes have a much weaker effect on the clustering itself.
+
+In an [earlier post](https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/) we applied fuzzy c-means clustering to RNAseq data. In [another post](https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/) we walked through fuzzy c-means clustering. Here we'll go through a popular package for fuzzy clustering [mfuzz](https://bioconductor.org/packages/release/bioc/html/Mfuzz.html). This package uses the same core function as we used [in the post on fuzzy cmeans](https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/). The mFuzz package provides several useful wrappers and a  handy plotting tool so it's a great way to get started with fuzzy cmeans clustering of RNAseq data.  Things I like about mFuzz are it's fast fuzzifier estimation and minimum centroid distance calculation functions. What I'm not a fan of are it's relatively inflexible plotting tool, the fact that it's built almost exclusively for time series data and it's use of the (in my opinion) dated 'expression set' data format.
+
+Let's take it for a test drive.
+
+For this tutorial we'll use the same dataset we used previously in the post on [post on k-means clustering](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html) and [another on fuzzy clustering](https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/). We download the data, apply a quick normalization and, for the sake of this tutorial and computation time, we'll take a subset of the most highly expressed and variable genes. 
+```{r warning=F,message=FALSE}
+library(edgeR)
+library(SummarizedExperiment)
+load(url("http://duffel.rail.bio/recount/SRP049355/rse_gene.Rdata"))
+counts <- assays(rse_gene)$counts
+y <- as.matrix((counts))
+y <- DGEList(counts = y, group=c(1,2,3,4,5,6,7,8,9,10))
+y <- calcNormFactors(y)
+z <- cpm(y, normalized.lib.size=TRUE)
+
+#mean/variance calculations
+z_var <- apply(z, 1, var)
+z_mean <- apply(z, 1, mean)
+
+#take only the most highly express/ variable
+#this is just for the sake of this tutorial
+test_data <- z[which(z_var > 50 & z_mean > 50), 6:10]
+
+```
+
+### Should you filter the data?
+Since fuzzy c-means is noise robust I generally perform an *a posteriori* filter using the membership scores. This has the benefit of not exluding genes which have an interesting profile but don't make a filtering threshold before clustering. It's up to you. Either way I would exclude noisy genes from downstream analyses.
+
+### Reading in the data:  
+Two of my least favorite things about the mFuzz package is the rather particular data format it expects and it's exclusivity to time series data. It uses the expression set format, which is a standard format albeit less common these days, but expects the first line of the data table to include the time point information. Here we're using time series data so that's fine but still feels odd to include this at the top of a count table.  
+
+Although mFuzz insists on the expression set format, it does have a handy function to convert a table to an expresion set `table2eset()` so that's nice.
+
+First we bind the time point information to the dataframe, save the table, then import it as an expression set:
+
+```{r warning=F,message=FALSE}
+library(Mfuzz)
+
+#first get the time point data together:
+timepoint <- c(1,2,3,4,5)
+# bind that to the dataframe
+test_data <- rbind(timepoint, test_data)
+row.names(test_data)[1]<-"time"
+
+#save it to a temp file so ti doesnt clutter up my blog directory
+tmp <- tempfile()
+write.table(test_data,file=tmp, sep='\t', quote = F, col.names=NA)
+
+#read it back in as an expression set
+data <- table2eset(file=tmp)
+```
+
+The first thing we need to do with any clustering analysis is to scale the data. This is so that we cluster the data based on expression profile and not on expression  (otherwise we'd just get cluster of genes binned by average expression level). Mfuzz has a handy function for this `standardise()`.
+
+```{r warning=F,message=FALSE}
+data.s <- standardise(data)
+```
+
+Next we need to estimate the fuzzifier. Fuzzy c-means relies on a fuzzifier parameter to designate how 'fuzzy' the clusters are. A fuzzifier of 1 is essentially hard clustering. [Schwaemmle and Jensen described a method for estimating the fuzzifier](https://www.ncbi.nlm.nih.gov/pubmed/20880957) and it is wrapped into a nice function here:  
+
+```{r warning=F,message=FALSE}
+m1 <- mestimate(data.s)
+m1
+```
+
+### cluster number determination  
+
+Determining the appropriate cluster number is tricky business and there are many ways to do it, several of which are outlined in [a previous post on k-means clustering](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html). I recommend trying several different cluster numbers and comparing the results. Greater cluster numbers will pull out more nuanced profiles but may result in redundant clusters. Smaller cluster numbers will result in the inappropriate grouping of distinct profiles.  
+
+There's a useful function in mFuzz `Dmin()` which calculates the minimum centroid distance between clusters for a series of cluster numbers. The idea is, after a certain number of clusters the separation of clusters becomes minimal. When we plot these we can look at the 'elbow' to pick the appropriate k number:
+
+```{r warning=F,message=FALSE}
+Dmin(data.s, m=m1, crange=seq(2,22,1), repeats=3, visu=TRUE)
+```
+
+Let's proceed with 10 clusters. Since this is where there is no significant decrease in centroid distance.
+
+```{r warning=F,message=FALSE}
+clust=10
+```
+
+The clustering now is super fast:
+
+```{r warning=F,message=FALSE}
+c <- mfuzz(data.s,c=clust,m=m1)
+```
+
+Similar to the results of `kmeans()` everthing you need is in the results object. Including the centers: `c[1]` ; the cluster assignments `c[3]` ; and the membership scores `c[4]`.  
+
+mFuzz provides some nice plotting functions, although they depend on XQuartz, and aren't as customizable as using ggplot. For an example of a ggplot based plotting solution, check the bottom of my post on [fuzzy clustering](https://2-bitbio.com/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/).  
+```{r warning=F,message=FALSE}
+mfuzz.plot(data.s,cl=c,mfrow=c(1,1),time.labels=c(24,48,72,96,120),new.window=FALSE)
+```
+
+There's another version of this plotting function, `mfuzz.plot2()` that scales the x axis and has some other paramters worth checking out.
+
+One thing worth including in any cluster analysis is a post hoc test of the correlation between cluster centroids. If you over clustered, and ended up with redundant clusters, you can detect this by correlating the centers to see if they are too similar. Ideally, no two clusters should exhibit a correlation greater than 0.85
+
+```{r warning=F,message=FALSE}
+cor(t(c[[1]]))
+```
+  
+Here several of our clusters have high overlap. At this point we'd might consider going back and re-evaluating the cluster number at this point since fuzzy cmeans might not accurately classify genes between these two clusters.
+
+This might not matter however since in fuzzy clustering each gene exists in all clusters simultaneously. The cluster assignment is simply that in for which a gene has the highest score. In theory, then, in downstream analysis we could simply pull the genes that have a score above a certain threshold for inclusion like 0.75 for any given cluster and use those for analyses (enrichment tests, etc.) This does introduce the problem of double counting certain genes but depending on the analysis this may or may not matter.  
+
+Here's how to extract the scores. the function `acore()` returns a list of the scores for each gene by cluster.
+
+```{r warning=F,message=FALSE}
+#extracts membership values 
+acore <- acore(data.s,c,min.acore=0)
+```
+
+From that, we can pull out the scores for the cluster assignments where the assignment is based on the top scoring cluster.
+
+```{r warning=F,message=FALSE}
+acore_list <- do.call(rbind, lapply(seq_along(acore), function(i){ data.frame(CLUSTER=i, acore[[i]])}))
+```
+
+
+From here you can doo all the fun downstream analysis. Enrichment tests, take just the highest scoring genes of each cluster and eveloping hypotheses, or correlate the clusters with phenotypic data.
+
+
+Tune in next time where we will develop new clustering techniques to apply to RNAseq data.
+
+```{r warning=F,message=FALSE}
+sessionInfo()
+```

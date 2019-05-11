@@ -6,10 +6,20 @@
     <description>Recent content in Machine Learning on 2-BitBio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 04 Sep 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 09 May 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Fuzzy cMeans clustering of RNAseq data using mFuzz</title>
+      <link>/post/fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz/</link>
+      <pubDate>Thu, 09 May 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz/</guid>
+      <description>Note this is part 4 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here ; part two on K-means clustering here ; and part three on fuzzy c-means clustering here.
+Clustering is a useful data reduction technique for RNAseq experiments. In previous posts, we discussed the usefulness of hard clustering techniques such as hierarcical clustering and K-means clustering. These techniques will partition all genes into co-expression clusters.</description>
+    </item>
     
     <item>
       <title>One hot encode a DNA sequence using python and scikit learn</title>
