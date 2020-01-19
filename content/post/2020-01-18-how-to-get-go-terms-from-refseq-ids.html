@@ -1,0 +1,96 @@
+---
+title: "How to get GO terms from Refseq IDs"
+author: ''
+date: '2020-01-18'
+slug: how-to-get-go-terms-from-refseq-ids
+categories:
+  - BioInformatics
+tags:
+  - Python
+---
+
+
+
+<p><img src="../../img/mushroom-guardians.jpg" width="100%" /></p>
+<p>A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.</p>
+<ol style="list-style-type: decimal">
+<li>BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s <a href="https://2-bitbio.com/2017/07/blastx-is-too-slow-heres-some.html">much much fast than BLAST</a>)<br />
+</li>
+<li>BLASTing gene sequences against Uniprot databases Swissprot and Trembl.<br />
+</li>
+<li>Retrieving GOterms using the Uniprot identifiers.</li>
+</ol>
+<p>It is possible however to skip the Uniprot BLASTs and retrieve the GO terms from Uniprot using the RefSeq IDs directly. I should note that this only works for gene models that exist in BOTH Refseq AND Uniprot and have 100% identity. So if you’re working on a non-traditional model system your mileage may vary.</p>
+<p>You query Uniprot directly using their API with RefSeq as the search term. The following syntax will retrieve the GO terms (if any) for the <code>REFSEQID</code> term:<br />
+<code>https://www.uniprot.org/uniprot/?query=database%3A%28type%3Arefseq+REFSEQID%29&amp;sort=score&amp;columns=id,entry%20name,go-id,go,go(biological%20process),go(molecular%20function),go(cellular%20component)&amp;format=tab</code></p>
+<p>So if you have a BLAST tab file (<code>-outfmt 6</code>) from RefSeq it is fairly easy to loop all of this. The Python script below does just that. Simply feed it a file of RefSeq IDs and it will spit out the GO terms of all associated Uniprot IDs.</p>
+<pre class="python"><code>import sys, os
+from urllib.request import urlopen
+
+##
+## refseq2go.py
+## By: Jake Warner
+##
+
+## This script takes a list of Refseq with IDs and outputs a tab deliminated file with the following fields:
+
+# Refseq ID
+# Uniprot ID
+# Uniprot description
+# GO IDs
+# GO Biological process
+# GO Molecular function
+# GO Cellular Compartment
+
+infile = open(sys.argv[1],&#39;r&#39;)
+outfile = open(&#39;%s_go.txt&#39; %(sys.argv[1][:-4]), &#39;w&#39;)
+
+# isolate refseq ID
+linecount=0
+uprothits=0
+uprotmissing=0
+#loop the query IDs
+for line in infile:
+    linecount+=1
+    if linecount==1:
+        outfile.write(&#39;refseq_id\tuniprot_id\tuniprot_description\tGO_ids\tGO_BP\tGO_MF\tGO_CC\n&#39;)
+    line=line.rstrip()
+    refseq_id=line
+    page = urlopen(&#39;https://www.uniprot.org/uniprot/?query=database%3A%28type%3Arefseq+&#39;+refseq_id+&#39;%29&amp;sort=score&amp;columns=id,entry%20name,go-id,go,go(biological%20process),go(molecular%20function),go(cellular%20component)&amp;format=tab&#39;).read()
+    try:
+        page = page.decode(&#39;utf-8&#39;).splitlines()[1]
+        uprothits+=1
+    except:
+        uprotmissing+=1
+    try:
+        uprot_id =page.split(&#39;\t&#39;)[0]
+    except:
+        uprot_id =&#39;No_Uniprot_ID&#39;
+    try:
+        uprot_description=page.split(&#39;\t&#39;)[1]
+    except:
+        uprot_description=&#39;No_Uniprot_description&#39;
+    try:
+        go_id=page.split(&#39;\t&#39;)[2]
+    except:
+        go_id=&#39;No_GO_Codes&#39;
+    try:
+        go_bp=page.split(&#39;\t&#39;)[4]
+    except:
+        go_bp=&#39;No_GO_codes&#39;
+    try:
+        go_mf=page.split(&#39;\t&#39;)[5]
+    except:
+        go_mf=&#39;No_GO_codes&#39;
+    try:
+        go_cc=page.split(&#39;\t&#39;)[6]
+    except:
+        go_cc=&#39;No_GO_codes&#39;
+    outfile.write(&#39;%s\t%s\t%s\t%s\t%s\t%s\t%s\n&#39;%(refseq_id,uprot_id,uprot_description,go_id,go_bp,go_mf,go_cc))
+print(&quot;Read &quot;+str(linecount)+&quot; Refseq IDs&quot;)
+print(str(uprothits) +&quot; had a match in Uniprot&quot;)
+print(str(uprotmissing) + &quot; had no Uniprot match&quot;)
+outfile.close()</code></pre>
+<p>You can invoke it like so:</p>
+<pre class="bash"><code>python refseq2go.py refseqIDs.txt</code></pre>
+<p>Happy annotating!</p>

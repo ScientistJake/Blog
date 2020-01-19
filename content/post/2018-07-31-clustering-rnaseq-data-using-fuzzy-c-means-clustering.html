@@ -13,7 +13,8 @@ tags:
 
 
 
-<p>Note this is part 2 of a series on clustering RNAseq data. Check out <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one on hierarcical clustering here</a> and <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two on K-means clustering here</a>.</p>
+<p>Note this is part 3 of a series on clustering RNAseq data. Check out <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one on hierarcical clustering here</a> and <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two on K-means clustering here</a>.</p>
+<p><img src="../../img/fresh-fuzzy-peaches.jpg" width="100%" /></p>
 <p>Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in <a href="http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html">part one</a> and <a href="http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html">part two</a> of this series. Today we’re going to discuss yet another approach, fuzzy c-means clustering a.k.a. soft K-means clustering.</p>
 <p>Fuzzy c-means clustering is useful for RNAseq data since gene expression is inherently noisy and fuzzy clustering is more robust to this noise. Furthermore we can use the membership score, a key feature of soft clustering, to filter genes which don’t have a high membership for any cluster (because they’re probably noise). First let’s talk a bit about what fuzzy c-means is and how it relates to k-means. Feel free to skip down to the part where we apply this algorithm to transcriptomic data.</p>
 <div id="what-is-fuzzy-c-means-clustering" class="section level2">
@@ -24,7 +25,8 @@ tags:
 <h2>How is fuzzy c-means clustering different from regular (hard) K-means?</h2>
 <p>As a <a href="https://en.wikipedia.org/wiki/K-means_clustering">partioning clustering algorithm</a> K-means clustering will assign each and every datapoint to one and only one cluster. One downside to this is it <em>forces</em> in between datapoints into one clsuter or another. Furthermore since the mean of those data dictate the position of the cluster center these in between and outlier points can affect the overall cluster structure.</p>
 <p>Fuzzy c-means on the other hand is very similar except it assigns each data-point a cluster membership score, where being closer to the cluster center means a higher score, and these scores are used to position the centroids. Thus, fuzzy clustering is more robust against noise and outliers since low scoring datapoints have a reduced impact on the position of the cluster center.</p>
-<p>Consider the two plots below, the first is hard k-means clustering and the second is fuzzy c-means. Note that in the latter the cluster membership score is reported and those closer to the center have higher scores. <img src="/post/2018-07-31-clustering-rnaseq-data-using-fuzzy-c-means-clustering_files/figure-html/unnamed-chunk-1-1.png" width="576" /></p>
+<p>Consider the two plots below, the first is hard k-means clustering and the second is fuzzy c-means. Note that in the latter the cluster membership score is reported and those closer to the center have higher scores.
+<img src="/post/2018-07-31-clustering-rnaseq-data-using-fuzzy-c-means-clustering_files/figure-html/unnamed-chunk-1-1.png" width="576" /></p>
 <p>It’s subtle because these dummy data are pretty clusterable but the centroids are different on account that the data points with low membership have less effect on the centroid position.</p>
 <p>This concept of membership is an important part of fuzzy c-means and we must keep in mind that <strong>every data point belongs in all clusters simultaneously</strong> with varying degrees of membership. Here’s the same data showing membership scores for each of the three clusters:</p>
 <p><img src="/post/2018-07-31-clustering-rnaseq-data-using-fuzzy-c-means-clustering_files/figure-html/unnamed-chunk-2-1.png" width="576" /></p>
@@ -78,7 +80,7 @@ scaledata &lt;- scaledata[complete.cases(scaledata),]</code></pre>
 
 m &lt;- mestimate(scaledata)
 m</code></pre>
-<pre><code>## [1] 2.017141</code></pre>
+<pre><code>## [1] 2.017261</code></pre>
 </div>
 <div id="fuzzy-c-means-how-many-clusters" class="section level2">
 <h2>Fuzzy c-means: How many clusters?</h2>
@@ -129,12 +131,12 @@ ggplot(centroids_long, aes(x=sample,y=value, group=cluster, colour=as.factor(clu
 <p>We can assess the similarity of the cluster centroids to identify redundancy or high overlap. To do we simply correlate the cluster centroids with each other. If the centroids are too similar then they will have a high correlation. If your K number produces clusters with high correlation (say above 0.85) then consider reducing the number of clusters.</p>
 <p>Correlate the centroids to see how similar they are:</p>
 <pre class="r"><code>cor(t(fcm_centroids))</code></pre>
-<pre><code>##            1          2          3           4           5
-## 1  1.0000000  0.2721672  0.1467643 -0.43518892 -0.79189289
-## 2  0.2721672  1.0000000 -0.8417114 -0.86409851  0.36021134
-## 3  0.1467643 -0.8417114  1.0000000  0.48633546 -0.70359164
-## 4 -0.4351889 -0.8640985  0.4863355  1.00000000 -0.08410358
-## 5 -0.7918929  0.3602113 -0.7035916 -0.08410358  1.00000000</code></pre>
+<pre><code>##             1           2          3          4          5
+## 1  1.00000000 -0.08194363 -0.7703423  0.3824107 -0.7182979
+## 2 -0.08194363  1.00000000 -0.4570707 -0.8584559  0.4815650
+## 3 -0.77034231 -0.45707069  1.0000000  0.2810197  0.1316006
+## 4  0.38241072 -0.85845587  0.2810197  1.0000000 -0.8476321
+## 5 -0.71829794  0.48156501  0.1316006 -0.8476321  1.0000000</code></pre>
 <p>It looks like we have good separation of the clusters as no cor score is above 0.85.</p>
 <p>Now’s the fun part where we can plot the gene profiles by cluster. We simply subset the results and the centroids by cluster and plot it out. We can also set a color scale for the membership score:</p>
 <pre class="r"><code>#start with the input data
@@ -180,11 +182,8 @@ ggplot(cluster_plot_df, aes(x=sample,y=value)) +
 <div id="should-you-filter-the-data-redux" class="section level3">
 <h3>Should you filter the data (redux)?</h3>
 <p>This is the point where I’d filter the data based on membership score before proceeding to downstream analysis. This will leave out genes that don’t fit well into any cluster, which are probably noise, before proceeding.</p>
-</div>
-</div>
-<div id="comparing-cluster-methods" class="section level2">
-<h2>Comparing cluster methods:</h2>
-<p>Let’s see how this compares to hard K-means clustering!</p>
+<p>##Comparing cluster methods:
+Let’s see how this compares to hard K-means clustering!</p>
 <p>First we perform the kmeans:</p>
 <pre class="r"><code>#perform the kmeans
 kmeans_results &lt;- kmeans(scaledata,centers=5)</code></pre>
@@ -234,6 +233,7 @@ heatmap.2(x= -log(OT$pTable),
 <p><img src="/post/2018-07-31-clustering-rnaseq-data-using-fuzzy-c-means-clustering_files/figure-html/unnamed-chunk-13-1.png" width="576" /></p>
 <p>As you can see there is some discrepancy in how the two algorithms behave but overall they perform similarly. Since we enriched our dataset in the most highly variable genes we would expect the clustering to be fairly robust in both cases. As we noted above, fuzzy c-means performs better in noisier datasets which might be more typical than our practice data here.</p>
 </div>
+</div>
 <div id="what-to-do-from-here" class="section level2">
 <h2>What to do from here?</h2>
 <p>Once we are happy with our clustering we can do lots of analyses on the clustered dataset. Including but not limited to:</p>
@@ -246,13 +246,13 @@ heatmap.2(x= -log(OT$pTable),
 </ul>
 <p>Hope this helps! Tune in for part four of this series on clustering when we take the mFuzz package for a test drive!</p>
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>## R version 3.5.0 (2018-04-23)
+<pre><code>## R version 3.6.1 (2019-07-05)
 ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-## Running under: macOS Sierra 10.12.6
+## Running under: macOS Mojave 10.14
 ## 
 ## Matrix products: default
-## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
-## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+## BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
 ## 
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -262,39 +262,35 @@ heatmap.2(x= -log(OT$pTable),
 ##  [8] datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] gplots_3.0.1                bindrcpp_0.2.2             
-##  [3] dplyr_0.7.8                 tidyr_0.8.2                
-##  [5] reshape2_1.4.3              SummarizedExperiment_1.12.0
-##  [7] DelayedArray_0.8.0          BiocParallel_1.16.0        
-##  [9] matrixStats_0.54.0          Biobase_2.42.0             
-## [11] GenomicRanges_1.34.0        GenomeInfoDb_1.18.1        
-## [13] IRanges_2.16.0              S4Vectors_0.20.1           
-## [15] BiocGenerics_0.28.0         edgeR_3.24.0               
-## [17] limma_3.38.2                gridExtra_2.3              
-## [19] e1071_1.7-0                 gganimate_0.9.9.9999       
-## [21] ggplot2_3.1.0              
+##  [1] gplots_3.0.1.2              dplyr_0.8.3                
+##  [3] tidyr_1.0.0                 reshape2_1.4.3             
+##  [5] SummarizedExperiment_1.14.1 DelayedArray_0.10.0        
+##  [7] BiocParallel_1.18.1         matrixStats_0.55.0         
+##  [9] Biobase_2.44.0              GenomicRanges_1.36.1       
+## [11] GenomeInfoDb_1.20.0         IRanges_2.18.3             
+## [13] S4Vectors_0.22.1            BiocGenerics_0.30.0        
+## [15] edgeR_3.26.8                limma_3.40.6               
+## [17] gridExtra_2.3               e1071_1.7-3                
+## [19] gganimate_1.0.4             ggplot2_3.2.1              
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] transformr_0.1.0       gtools_3.8.1           assertthat_0.2.0      
-##  [4] GenomeInfoDbData_1.2.0 yaml_2.2.0             progress_1.2.0        
-##  [7] gdtools_0.1.7          pillar_1.3.0           backports_1.1.2       
-## [10] lattice_0.20-38        glue_1.3.0             digest_0.6.18         
-## [13] XVector_0.22.0         colorspace_1.3-2       htmltools_0.3.6       
-## [16] Matrix_1.2-15          plyr_1.8.4             lpSolve_5.6.13        
-## [19] pkgconfig_2.0.2        magick_2.0             bookdown_0.7          
-## [22] zlibbioc_1.28.0        purrr_0.2.5            patchwork_0.0.1       
-## [25] scales_1.0.0           gdata_2.18.0           svglite_1.2.1         
-## [28] tweenr_1.0.0           tibble_1.4.2           farver_1.0            
-## [31] withr_2.1.2            lazyeval_0.2.1         magrittr_1.5          
-## [34] crayon_1.3.4           evaluate_0.12          forcats_0.3.0         
-## [37] class_7.3-14           blogdown_0.9           tools_3.5.0           
-## [40] prettyunits_1.0.2      hms_0.4.2              stringr_1.3.1         
-## [43] munsell_0.5.0          locfit_1.5-9.1         compiler_3.5.0        
-## [46] caTools_1.17.1.1       rlang_0.3.0.1          classInt_0.2-3        
-## [49] units_0.6-1            RCurl_1.95-4.11        bitops_1.0-6          
-## [52] labeling_0.3           rmarkdown_1.10         gtable_0.2.0          
-## [55] DBI_1.0.0              R6_2.3.0               knitr_1.20            
-## [58] bindr_0.1.1            rprojroot_1.3-2        KernSmooth_2.23-15    
-## [61] stringi_1.2.4          Rcpp_1.0.0             sf_0.7-1              
-## [64] spData_0.2.9.4         tidyselect_0.2.5       xfun_0.4</code></pre>
+##  [1] Rcpp_1.0.3             locfit_1.5-9.1         lattice_0.20-38       
+##  [4] gtools_3.8.1           prettyunits_1.1.0      class_7.3-15          
+##  [7] assertthat_0.2.1       zeallot_0.1.0          digest_0.6.23         
+## [10] plyr_1.8.5             R6_2.4.1               backports_1.1.5       
+## [13] evaluate_0.14          blogdown_0.17          pillar_1.4.3          
+## [16] zlibbioc_1.30.0        rlang_0.4.2            progress_1.2.2        
+## [19] lazyeval_0.2.2         gdata_2.18.0           Matrix_1.2-18         
+## [22] rmarkdown_2.0          labeling_0.3           stringr_1.4.0         
+## [25] RCurl_1.95-4.13        munsell_0.5.0          compiler_3.6.1        
+## [28] xfun_0.12              pkgconfig_2.0.3        htmltools_0.4.0       
+## [31] tidyselect_0.2.5       tibble_2.1.3           GenomeInfoDbData_1.2.1
+## [34] bookdown_0.17          crayon_1.3.4           withr_2.1.2           
+## [37] bitops_1.0-6           gtable_0.3.0           lifecycle_0.1.0       
+## [40] magrittr_1.5           scales_1.1.0           KernSmooth_2.23-16    
+## [43] stringi_1.4.5          farver_2.0.3           XVector_0.24.0        
+## [46] ellipsis_0.3.0         vctrs_0.2.1            forcats_0.4.0         
+## [49] tools_3.6.1            glue_1.3.1             tweenr_1.0.1          
+## [52] purrr_0.3.3            hms_0.5.3              yaml_2.2.0            
+## [55] colorspace_1.4-1       caTools_1.18.0         knitr_1.27</code></pre>
 </div>

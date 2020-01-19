@@ -11,7 +11,11 @@ tags:
   - RNAseq
 ---
 
-Note this is part 2 of a series on clustering RNAseq data. Check out [part one  on hierarcical clustering here](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) and [part two on K-means clustering here](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html).
+Note this is part 3 of a series on clustering RNAseq data. Check out [part one  on hierarcical clustering here](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) and [part two on K-means clustering here](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html).
+
+```{r pressure, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("../../img/fresh-fuzzy-peaches.jpg")
+```
 
 Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in [part one](http://www.2-bitbio.com/2017/04/clustering-rnaseq-data-making-heatmaps.html) and [part two](http://www.2-bitbio.com/2017/10/clustering-rnaseq-data-using-k-means.html) of this series. Today we're going to discuss yet another approach, fuzzy c-means clustering a.k.a. soft K-means clustering.
 

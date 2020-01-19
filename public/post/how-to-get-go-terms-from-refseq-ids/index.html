@@ -6,16 +6,72 @@
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
 <meta name="generator" content="Hugo 0.30" />
 
-<link rel="alternate" type="application/rss+xml" title="RSS" href="/tags/python/index.xml">
 
-<link rel="canonical" href="/tags/python/">
+
+<link rel="canonical" href="/post/how-to-get-go-terms-from-refseq-ids/">
 
 
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
-    <title>Python - 2-BitBio</title>
+    <title>How to get GO terms from Refseq IDs - 2-BitBio</title>
     
+<meta name="description" content="A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST) BLASTing gene sequences against Uniprot databases Swissprot and Trembl.">
+
+<meta property="og:title" content="How to get GO terms from Refseq IDs - 2-BitBio">
+<meta property="og:type" content="article">
+<meta property="og:url" content="/post/how-to-get-go-terms-from-refseq-ids/">
+<meta property="og:image" content="/images/default.png">
+<meta property="og:site_name" content="2-BitBio">
+<meta property="og:description" content="A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST) BLASTing gene sequences against Uniprot databases Swissprot and Trembl.">
+<meta property="og:locale" content="ja_JP">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="2-BitBio">
+<meta name="twitter:url" content="/post/how-to-get-go-terms-from-refseq-ids/">
+<meta name="twitter:title" content="How to get GO terms from Refseq IDs - 2-BitBio">
+<meta name="twitter:description" content="A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST) BLASTing gene sequences against Uniprot databases Swissprot and Trembl.">
+<meta name="twitter:image" content="/images/default.png">
+
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "NewsArticle",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id":"/"
+    },
+    "headline": "How to get GO terms from Refseq IDs - 2-BitBio",
+    "image": {
+      "@type": "ImageObject",
+      "url": "/images/default.png",
+      "height": 800,
+      "width": 800
+    },
+    "datePublished": "2020-01-18T00:00:00JST",
+    "dateModified": "2020-01-18T00:00:00JST",
+    "author": {
+      "@type": "Person",
+      "name": "2-BitBio"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "2-BitBio",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "/images/logo.png",
+        "width": 600,
+        "height": 60
+      }
+    },
+    "description": "A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.
+BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST)
+ BLASTing gene sequences against Uniprot databases Swissprot and Trembl."
+  }
+</script>
+
+
     <link href="/css/styles.css" rel="stylesheet">
     
     
@@ -62,64 +118,155 @@
 <div class="row">
   <div class="col-md-8">
 
-    
-    <header class="page-header">
-      <h1>Python</h1>
-    </header>
-    
+    <nav class="p-crumb">
+      <ol class="breadcrumb">
+        <li><a href="/"><i class="fa fa-home" aria-hidden="true"></i></a></li>
+        
+        <li itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb"><a href="/post/" itemprop="url"><span itemprop="title">post</span></a></li>
+        
+        <li class="active">How to get GO terms from Refseq IDs</li>
+      </ol>
+    </nav>
 
-    <ul class="p-articles">
-      
-      <li><article class="li">
+    <article class="single">
   <header>
     <ul class="p-facts">
       <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2020-01-18T00:00:00JST">Jan 18, 2020</time></li>
       <li><i class="fa fa-bookmark" aria-hidden="true"></i><a href="/post/">post</a></li>
       
     </ul>
-    <h2 class="title"><a href="/post/how-to-get-go-terms-from-refseq-ids/">How to get GO terms from Refseq IDs</a></h2>
+
+    <h1 class="title">How to get GO terms from Refseq IDs</h1>
   </header>
 
   
-  <div class="summary">A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.
-BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST)
- BLASTing gene sequences against Uniprot databases Swissprot and Trembl.</div>
 
-  
-  <footer>
-    <a href="/post/how-to-get-go-terms-from-refseq-ids/" title="How to get GO terms from Refseq IDs">Read More…</a>
-  </footer>
-  
-</article>
+  <div class="article-body"><p><img src="../../img/mushroom-guardians.jpg" width="100%" /></p>
+<p>A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.</p>
+<ol style="list-style-type: decimal">
+<li>BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s <a href="https://2-bitbio.com/2017/07/blastx-is-too-slow-heres-some.html">much much fast than BLAST</a>)<br />
 </li>
-      
-      <li><article class="li">
-  <header>
-    <ul class="p-facts">
-      <li><i class="fa fa-calendar" aria-hidden="true"></i><time datetime="2018-09-04T00:00:00JST">Sep 4, 2018</time></li>
-      <li><i class="fa fa-bookmark" aria-hidden="true"></i><a href="/post/">post</a></li>
-      
-    </ul>
-    <h2 class="title"><a href="/post/one-hot-encode-a-dna-sequence-using-python-and-scikit-learn/">One hot encode a DNA sequence using python and scikit learn</a></h2>
-  </header>
-
-  
-  <div class="summary">From the archive: Machine learning (in the informatics world) is like teenage sex: everyone talks about it, nobody really knows how to to do it, everyone thinks everyone else is doing it, so everyone claims they are too. Juvenile comparisons aside, the power of these tools can’t be ignored. Before applying most machine learning algorithms to DNA sequences they must first be converted to binary strings. Here we’ll show how to one hot encode a DNA sequence in Python using SciKit Learn.</div>
-
-  
-  <footer>
-    <a href="/post/one-hot-encode-a-dna-sequence-using-python-and-scikit-learn/" title="One hot encode a DNA sequence using python and scikit learn">Read More…</a>
-  </footer>
-  
-</article>
+<li>BLASTing gene sequences against Uniprot databases Swissprot and Trembl.<br />
 </li>
-      
-    </ul>
+<li>Retrieving GOterms using the Uniprot identifiers.</li>
+</ol>
+<p>It is possible however to skip the Uniprot BLASTs and retrieve the GO terms from Uniprot using the RefSeq IDs directly. I should note that this only works for gene models that exist in BOTH Refseq AND Uniprot and have 100% identity. So if you’re working on a non-traditional model system your mileage may vary.</p>
+<p>You query Uniprot directly using their API with RefSeq as the search term. The following syntax will retrieve the GO terms (if any) for the <code>REFSEQID</code> term:<br />
+<code>https://www.uniprot.org/uniprot/?query=database%3A%28type%3Arefseq+REFSEQID%29&amp;sort=score&amp;columns=id,entry%20name,go-id,go,go(biological%20process),go(molecular%20function),go(cellular%20component)&amp;format=tab</code></p>
+<p>So if you have a BLAST tab file (<code>-outfmt 6</code>) from RefSeq it is fairly easy to loop all of this. The Python script below does just that. Simply feed it a file of RefSeq IDs and it will spit out the GO terms of all associated Uniprot IDs.</p>
+<pre class="python"><code>import sys, os
+from urllib.request import urlopen
+
+##
+## refseq2go.py
+## By: Jake Warner
+##
+
+## This script takes a list of Refseq with IDs and outputs a tab deliminated file with the following fields:
+
+# Refseq ID
+# Uniprot ID
+# Uniprot description
+# GO IDs
+# GO Biological process
+# GO Molecular function
+# GO Cellular Compartment
+
+infile = open(sys.argv[1],&#39;r&#39;)
+outfile = open(&#39;%s_go.txt&#39; %(sys.argv[1][:-4]), &#39;w&#39;)
+
+# isolate refseq ID
+linecount=0
+uprothits=0
+uprotmissing=0
+#loop the query IDs
+for line in infile:
+    linecount+=1
+    if linecount==1:
+        outfile.write(&#39;refseq_id\tuniprot_id\tuniprot_description\tGO_ids\tGO_BP\tGO_MF\tGO_CC\n&#39;)
+    line=line.rstrip()
+    refseq_id=line
+    page = urlopen(&#39;https://www.uniprot.org/uniprot/?query=database%3A%28type%3Arefseq+&#39;+refseq_id+&#39;%29&amp;sort=score&amp;columns=id,entry%20name,go-id,go,go(biological%20process),go(molecular%20function),go(cellular%20component)&amp;format=tab&#39;).read()
+    try:
+        page = page.decode(&#39;utf-8&#39;).splitlines()[1]
+        uprothits+=1
+    except:
+        uprotmissing+=1
+    try:
+        uprot_id =page.split(&#39;\t&#39;)[0]
+    except:
+        uprot_id =&#39;No_Uniprot_ID&#39;
+    try:
+        uprot_description=page.split(&#39;\t&#39;)[1]
+    except:
+        uprot_description=&#39;No_Uniprot_description&#39;
+    try:
+        go_id=page.split(&#39;\t&#39;)[2]
+    except:
+        go_id=&#39;No_GO_Codes&#39;
+    try:
+        go_bp=page.split(&#39;\t&#39;)[4]
+    except:
+        go_bp=&#39;No_GO_codes&#39;
+    try:
+        go_mf=page.split(&#39;\t&#39;)[5]
+    except:
+        go_mf=&#39;No_GO_codes&#39;
+    try:
+        go_cc=page.split(&#39;\t&#39;)[6]
+    except:
+        go_cc=&#39;No_GO_codes&#39;
+    outfile.write(&#39;%s\t%s\t%s\t%s\t%s\t%s\t%s\n&#39;%(refseq_id,uprot_id,uprot_description,go_id,go_bp,go_mf,go_cc))
+print(&quot;Read &quot;+str(linecount)+&quot; Refseq IDs&quot;)
+print(str(uprothits) +&quot; had a match in Uniprot&quot;)
+print(str(uprotmissing) + &quot; had no Uniprot match&quot;)
+outfile.close()</code></pre>
+<p>You can invoke it like so:</p>
+<pre class="bash"><code>python refseq2go.py refseqIDs.txt</code></pre>
+<p>Happy annotating!</p>
+</div>
+
+  <footer class="article-footer">
+    
+    
+    
+    <section class="bordered">
+      <header>
+        <div class="panel-title">CATEGORIES</div>
+      </header>
+      <div>
+        <ul class="p-terms">
+          
+          <li><a href="/categories/bioinformatics/">BioInformatics</a></li>
+          
+        </ul>
+      </div>
+    </section>
+    
+    
+    
+    <section class="bordered">
+      <header>
+        <div class="panel-title">TAGS</div>
+      </header>
+      <div>
+        <ul class="p-terms">
+          
+          <li><a href="/tags/python/">Python</a></li>
+          
+        </ul>
+      </div>
+    </section>
+    
+    
+  </footer>
+
+</article>
+
 
     
-
-
   </div>
+
   <div class="col-md-4">
     
 <aside class="l-sidebar">

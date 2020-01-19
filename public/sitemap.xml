@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>/post/how-to-get-go-terms-from-refseq-ids/</loc>
+    <lastmod>2020-01-18T00:00:00+00:00</lastmod>
+  </url>
   
   <url>
     <loc>/post/fuzzy-cmeans-clustering-of-rnaseq-data-using-mfuzz/</loc>
@@ -29,19 +33,19 @@
   
   <url>
     <loc>/</loc>
-    <lastmod>2019-05-09T00:00:00+00:00</lastmod>
+    <lastmod>2020-01-18T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>/categories/bioinformatics/</loc>
-    <lastmod>2019-05-09T00:00:00+00:00</lastmod>
+    <lastmod>2020-01-18T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>/categories/</loc>
-    <lastmod>2019-05-09T00:00:00+00:00</lastmod>
+    <lastmod>2020-01-18T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -59,13 +63,13 @@
   
   <url>
     <loc>/post/</loc>
-    <lastmod>2019-05-09T00:00:00+00:00</lastmod>
+    <lastmod>2020-01-18T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>/tags/python/</loc>
-    <lastmod>2018-09-04T00:00:00+00:00</lastmod>
+    <lastmod>2020-01-18T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   

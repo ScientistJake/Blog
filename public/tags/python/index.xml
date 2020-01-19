@@ -6,10 +6,21 @@
     <description>Recent content in Python on 2-BitBio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 04 Sep 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 18 Jan 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>How to get GO terms from Refseq IDs</title>
+      <link>/post/how-to-get-go-terms-from-refseq-ids/</link>
+      <pubDate>Sat, 18 Jan 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/how-to-get-go-terms-from-refseq-ids/</guid>
+      <description>A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.
+BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST)
+ BLASTing gene sequences against Uniprot databases Swissprot and Trembl.</description>
+    </item>
     
     <item>
       <title>One hot encode a DNA sequence using python and scikit learn</title>

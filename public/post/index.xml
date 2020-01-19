@@ -6,10 +6,21 @@
     <description>Recent content in Posts on 2-BitBio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 09 May 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 18 Jan 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>How to get GO terms from Refseq IDs</title>
+      <link>/post/how-to-get-go-terms-from-refseq-ids/</link>
+      <pubDate>Sat, 18 Jan 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/how-to-get-go-terms-from-refseq-ids/</guid>
+      <description>A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is… diverged. My typical functional annotation workflow usually involves.
+BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it’s much much fast than BLAST)
+ BLASTing gene sequences against Uniprot databases Swissprot and Trembl.</description>
+    </item>
     
     <item>
       <title>Fuzzy cMeans clustering of RNAseq data using mFuzz</title>
@@ -54,7 +65,7 @@ Clustering is a useful data reduction technique for RNAseq experiments. In previ
       <pubDate>Tue, 31 Jul 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/</guid>
-      <description>Note this is part 2 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here and part two on K-means clustering here.
+      <description>Note this is part 3 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here and part two on K-means clustering here.
 Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in part one and part two of this series.</description>
     </item>
     

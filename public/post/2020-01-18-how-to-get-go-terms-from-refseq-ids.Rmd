@@ -1,0 +1,104 @@
+---
+title: "How to get GO terms from Refseq IDs"
+author: ''
+date: '2020-01-18'
+slug: how-to-get-go-terms-from-refseq-ids
+categories:
+  - BioInformatics
+tags:
+  - Python
+---
+
+```{r pressure, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("../../img/mushroom-guardians.jpg")
+```
+
+A Gene Ontology analysis can add a lot of value to any omics study. Mapping GO terms to a newly sequenced genome or transcriptome can represent a challenge especially if the model system is... diverged. My typical functional annotation workflow usually involves.  
+
+1.  BLASTing gene sequences against RefSeq (although I typically use PLAST for this step since it's [much much fast than BLAST](https://2-bitbio.com/2017/07/blastx-is-too-slow-heres-some.html))  
+2.  BLASTing gene sequences against Uniprot databases Swissprot and Trembl.  
+3.  Retrieving GOterms using the Uniprot identifiers.
+
+It is possible however to skip the Uniprot BLASTs and retrieve the GO terms from Uniprot using the RefSeq IDs directly. I should note that this only works for gene models that exist in BOTH Refseq AND Uniprot and have 100% identity. So if you're working on a non-traditional model system your mileage may vary.  
+
+You query Uniprot directly using their API with RefSeq as the search term. The following syntax will retrieve the GO terms (if any) for the `REFSEQID` term:  
+`https://www.uniprot.org/uniprot/?query=database%3A%28type%3Arefseq+REFSEQID%29&sort=score&columns=id,entry%20name,go-id,go,go(biological%20process),go(molecular%20function),go(cellular%20component)&format=tab`
+
+So if you have a BLAST tab file (`-outfmt 6`) from RefSeq it is fairly easy to loop all of this. The Python script below does just that. Simply feed it a file of RefSeq IDs and it will spit out the GO terms of all associated Uniprot IDs.
+
+```{python eval=FALSE, python.reticulate=FALSE}
+import sys, os
+from urllib.request import urlopen
+
+##
+## refseq2go.py
+## By: Jake Warner
+##
+
+## This script takes a list of Refseq with IDs and outputs a tab deliminated file with the following fields:
+
+# Refseq ID
+# Uniprot ID
+# Uniprot description
+# GO IDs
+# GO Biological process
+# GO Molecular function
+# GO Cellular Compartment
+
+infile = open(sys.argv[1],'r')
+outfile = open('%s_go.txt' %(sys.argv[1][:-4]), 'w')
+
+# isolate refseq ID
+linecount=0
+uprothits=0
+uprotmissing=0
+#loop the query IDs
+for line in infile:
+	linecount+=1
+	if linecount==1:
+		outfile.write('refseq_id\tuniprot_id\tuniprot_description\tGO_ids\tGO_BP\tGO_MF\tGO_CC\n')
+	line=line.rstrip()
+	refseq_id=line
+	page = urlopen('https://www.uniprot.org/uniprot/?query=database%3A%28type%3Arefseq+'+refseq_id+'%29&sort=score&columns=id,entry%20name,go-id,go,go(biological%20process),go(molecular%20function),go(cellular%20component)&format=tab').read()
+	try:
+		page = page.decode('utf-8').splitlines()[1]
+		uprothits+=1
+	except:
+		uprotmissing+=1
+	try:
+		uprot_id =page.split('\t')[0]
+	except:
+		uprot_id ='No_Uniprot_ID'
+	try:
+		uprot_description=page.split('\t')[1]
+	except:
+		uprot_description='No_Uniprot_description'
+	try:
+		go_id=page.split('\t')[2]
+	except:
+		go_id='No_GO_Codes'
+	try:
+		go_bp=page.split('\t')[4]
+	except:
+		go_bp='No_GO_codes'
+	try:
+		go_mf=page.split('\t')[5]
+	except:
+		go_mf='No_GO_codes'
+	try:
+		go_cc=page.split('\t')[6]
+	except:
+		go_cc='No_GO_codes'
+	outfile.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n'%(refseq_id,uprot_id,uprot_description,go_id,go_bp,go_mf,go_cc))
+print("Read "+str(linecount)+" Refseq IDs")
+print(str(uprothits) +" had a match in Uniprot")
+print(str(uprotmissing) + " had no Uniprot match")
+outfile.close()
+```
+
+You can invoke it like so:
+```{bash eval=FALSE}
+python refseq2go.py refseqIDs.txt
+```
+
+Happy annotating!

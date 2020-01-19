@@ -45,7 +45,7 @@ Clustering is a useful data reduction technique for RNAseq experiments. In previ
       <pubDate>Tue, 31 Jul 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/clustering-rnaseq-data-using-fuzzy-c-means-clustering/</guid>
-      <description>Note this is part 2 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here and part two on K-means clustering here.
+      <description>Note this is part 3 of a series on clustering RNAseq data. Check out part one on hierarcical clustering here and part two on K-means clustering here.
 Clustering gene expression is a particularly useful data reduction technique for RNAseq experiments. It allows us to bin genes by expression profile, correlate those bins to external factors like phenotype, and discover groups of co-regulated genes. Two common methods for clustering are hierarchical (agglomerative) clustering and k-means (centroid based) clustering which we discussed in part one and part two of this series.</description>
     </item>
     
